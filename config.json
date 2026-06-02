@@ -1,0 +1,43 @@
+{
+  "noise": {
+    "width": 3.0,
+    "width_frac": 0.3,
+    "bound_frac_height": 0.1
+  },
+  "spe": {
+    "width": 11.0,
+    "width_frac": 0.2,
+    "bound_frac_height": 0.1
+  },
+  "dpe": {
+    "height_bounds_low": 800,
+    "height_bounds_high": 5000
+  },
+  "multi_pe": {
+    "a3": 900,
+    "a4": 800,
+    "a5": 700
+  },
+  "exp": {
+    "tau_low": 8,
+    "tau_high": 300,
+    "ae_guess": 9000
+  },
+  "fit": {
+    "maxfev": 10000
+ },
+ "alpha": {
+    "bound_frac_height": 0.2,
+    "bound_frac_peak": 0.2,
+    "width_low": 30.0,
+    "width_high": 60.0,
+    "exp_a_low": 0.0,
+    "exp_tau_low": 0.0,
+    "exp_tau_high": 1000.0,
+    "exp_a_high": 4000.0,
+    "bins": 200,
+    "range_low": 0,
+    "range_high": 900
+ }
+
+} 
