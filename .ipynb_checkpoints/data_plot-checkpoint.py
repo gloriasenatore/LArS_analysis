@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib
 from matplotlib.ticker import AutoMinorLocator
 import legendstyles
 plt.style.use(legendstyles.LEGEND)
@@ -55,7 +56,7 @@ def plot_calib_spectrum(centers, hist, popt_tot, perr_tot, filename, ylim=(1e1, 
         plt.savefig("plots/calibration/bad/"+filename, bbox_inches='tight')
         
 
-def plot_alpha_spectrum(centers, hist, popt_tot, perr_tot, filename, ylim=(7e-1, 6e5), interval=5):
+def plot_alpha_spectrum(centers, hist, popt_tot, perr_tot, filename, filename_hist, ylim=(7e-1, 6e5), interval=5, save_to_file=False):
     fig = plt.figure(figsize=(10,6))
     gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
     axs = gs.subplots(sharex=True, sharey=False)
@@ -70,7 +71,7 @@ def plot_alpha_spectrum(centers, hist, popt_tot, perr_tot, filename, ylim=(7e-1,
     axs[0].plot(centers[mini:maxi],exp_list(centers[mini:maxi],popt_tot[3], popt_tot[4]),'--', color='lightblue')
     axs[0].set_yscale('log')
     axs[1].xaxis.set_minor_locator(AutoMinorLocator())
-    axs[0].set_ylabel('Counts/5 PE', fontsize=19)
+    axs[0].set_ylabel('Counts/'+str(interval)+'PE', fontsize=19)
     axs[0].legend(fontsize=15, frameon=False, loc='lower left')
 
     axs[1].set_xlabel('Waveform Area [PE]', fontsize=19)
@@ -92,3 +93,34 @@ def plot_alpha_spectrum(centers, hist, popt_tot, perr_tot, filename, ylim=(7e-1,
     else:
         print("WARNING: not very good fit, saved in bad")
         plt.savefig("plots/light_yield_before_PID/bad/"+filename, bbox_inches='tight')
+        
+    if save_to_file:
+        gaus_fit = gaus_list(centers[mini:maxi],popt_tot[0],popt_tot[1],popt_tot[2])
+        with open("plots/light_yield_before_PID/"+filename_hist,"x") as f:
+            j=0
+            for i in range(len(hist)):
+                f.write(str(centers[i])+"\t"+str(hist[i])+"\t"+str(gaus_fit[i])+"\t"+str(popt_tot[1])+
+                        "\t"+str(perr_tot[1])+"\t"+str(popt_tot[2])+
+                        "\t"+str(perr_tot[2]))
+                if(i >= mini and i < maxi):
+                    f.write("\t"+str(res[j])+"\t"+str(mini)+"\t"+str(maxi))
+                    j=j+1
+
+                f.write("\n")
+        
+        
+def plot_hist2d_Integral_Fprompt(xvalues, yvalues, _range, filename):
+    fig = plt.figure(figsize=(10,6))
+    h = plt.hist2d(xvalues, yvalues, bins=[200, 100], range=[[_range[0], _range[1]],[0,1]], norm=matplotlib.colors.LogNorm())
+    fig.colorbar(h[3])
+    plt.ylabel("Fprompt", fontsize=19)
+    plt.xlabel(r"Waveform integral [PE]", fontsize=19)
+    
+    plt.savefig("plots/light_yield_after_PID/"+filename, bbox_inches='tight')
+    
+
+def plot_Fprompt(df, filename):
+    fig = plt.figure(figsize=(10,6))
+    plt.hist(df["Prompt"], bins=200, range=(0, 1), histtype='step')
+    plt.savefig("plots/light_yield_after_PID/"+filename, bbox_inches='tight')
+    

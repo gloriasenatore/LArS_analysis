@@ -1,4 +1,9 @@
 {
+  "analysis": {
+    "if_calibrate": false,
+    "if_alpha_pre_PID": false,
+    "if_alpha_post_PID": true
+  },
   "noise": {
     "width": 3.0,
     "width_frac": 0.3,
@@ -27,6 +32,7 @@
     "maxfev": 10000
  },
  "alpha": {
+    "fit_from": 300,
     "bound_frac_height": 0.2,
     "bound_frac_peak": 0.2,
     "width_low": 30.0,
@@ -35,9 +41,19 @@
     "exp_tau_low": 0.0,
     "exp_tau_high": 1000.0,
     "exp_a_high": 4000.0,
-    "bins": 200,
+    "bins": 180,
     "range_low": 0,
-    "range_high": 900
+    "range_high": 900,
+    "save_to_file": false
+ },
+ "PID_analysis": {
+    "PE_cut": 200,
+    "prompt_bins": 200,
+    "bound_frac_height": 0.2,
+    "bound_frac_peak": 0.2,
+    "width_low": 0.02,
+    "width_high": 0.5,
+    "fit_interval_frac": 0.3
  }
 
 } 

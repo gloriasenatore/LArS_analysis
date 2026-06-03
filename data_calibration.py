@@ -3,7 +3,7 @@
 from scipy.signal import find_peaks
 import numpy as np
 from scipy.optimize import curve_fit
-from fit_models import calib_fit_model, combined_gaus_with_exp
+from fit_models import calib_fit_model, combined_gaus_with_exp, gaus
 
 def small_pulses(df):
     areas = []
@@ -114,4 +114,54 @@ def fit_hist_alpha_bump(xdata, ydata, peak_guess, height_guess, cfg):
     perr_tot = np.sqrt(np.diag(pcov))
     
     return popt_tot, perr_tot
+
+
+def fit_fprompt(xdata, ydata, peaks_guess, heights_guess, cfg, interval = 0.005):
     
+    peak_ER = peaks_guess[0]
+    peak_alpha = peaks_guess[1]
+    
+    height_ER = heights_guess[0]
+    height_alpha = heights_guess[1]
+    
+    ## ER and alpha Fprompt are fitted separately, ER first and alpha later:
+    
+    fit_interval_ER_low = np.maximum(0, int(peak_ER * (1 - cfg["PID_analysis"]["fit_interval_frac"])/interval))
+    fit_interval_ER_high = int(peak_ER * (1 + cfg["PID_analysis"]["fit_interval_frac"])/interval)
+    
+    bound_low = [
+        height_ER * (1 - cfg["PID_analysis"]["bound_frac_height"]),
+        peak_ER * (1 - cfg["PID_analysis"]["bound_frac_peak"]),
+        cfg["PID_analysis"]["width_low"]
+    ]
+    
+    bound_high = [
+        height_ER * (1 + cfg["PID_analysis"]["bound_frac_height"]),
+        peak_ER * (1 + cfg["PID_analysis"]["bound_frac_peak"]),
+        cfg["PID_analysis"]["width_high"]
+    ]
+    
+    popt_ER, pcov = curve_fit(gaus, xdata[fit_interval_ER_low:fit_interval_ER_high], ydata[fit_interval_ER_low:fit_interval_ER_high], bounds=(bound_low, bound_high), sigma=np.sqrt(np.maximum(ydata[fit_interval_ER_low:fit_interval_ER_high],1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    perr_ER = np.sqrt(np.diag(pcov))
+    
+    fit_interval_alpha_low = int(peak_alpha * (1 - cfg["PID_analysis"]["fit_interval_frac"])/interval)
+    fit_interval_alpha_high = np.minimum(1, int(peak_alpha * (1 + cfg["PID_analysis"]["fit_interval_frac"])))
+    if fit_interval_alpha_high == 1: fit_interval_alpha_high = -1
+    else: fit_interval_alpha_high = fit_interval_alpha_high/interval
+    
+    bound_low = [
+        height_alpha * (1 - cfg["PID_analysis"]["bound_frac_height"]),
+        peak_alpha * (1 - cfg["PID_analysis"]["bound_frac_peak"]),
+        cfg["PID_analysis"]["width_low"]
+    ]
+    
+    bound_high = [
+        height_alpha * (1 + cfg["PID_analysis"]["bound_frac_height"]),
+        peak_alpha * (1 + cfg["PID_analysis"]["bound_frac_peak"]),
+        cfg["PID_analysis"]["width_high"]
+    ]
+    
+    popt_alpha, pcov = curve_fit(gaus, xdata[fit_interval_alpha_low:fit_interval_alpha_high], ydata[fit_interval_alpha_low:fit_interval_alpha_high], bounds=(bound_low, bound_high), sigma=np.sqrt(np.maximum(ydata[fit_interval_alpha_low:fit_interval_alpha_high],1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    perr_alpha = np.sqrt(np.diag(pcov))
+    
+    return popt_ER, perr_ER, popt_alpha, perr_alpha

@@ -41,3 +41,15 @@ def make_output_name(filepath, prefix="hist_calib", ext=".png"):
     run_tag = match.group(1)
 
     return f"{prefix}_{run_tag}{ext}"
+
+
+def read_from_file(file_name, obs="SPE", N=1):   
+    with open(file_name, "r") as f:
+        for line in f:
+            field = line.split()
+            if field[0] == obs:
+                var = float(field[N])
+                break
+            
+    return var
+    
