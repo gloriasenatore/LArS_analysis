@@ -20,8 +20,9 @@ def import_tree(path):
     leftedge = tree["T1"]["Leftedge"].array(library="np")
     height = tree["T1"]["Height"].array(library="np")
     prompts = tree["T1"]["Prompt"].array(library="np")
+    events = tree["T1"]["Evtnb"].array(library="np")
     #traces = tree["T1"]["Trace"].array(library="np") #Reading and storing the all pulses need some time, you only need it if you want to visualize them
-    d = {"Integral":integral, "RMS":RMS, "Peaks_area":area, "Height":height, "Leftedge": leftedge, "Prompt": prompts} #, "Trace":traces}
+    d = {"Integral":integral, "RMS":RMS, "Peaks_area":area, "Height":height, "Leftedge": leftedge, "Prompt": prompts, "Evtnb":events} #, "Trace":traces}
     df_1 = pd.DataFrame(d)
     print("Total waveforms number " + str(len(df_1)))
     df = df_1[(df_1["RMS"] < 3)] #quality cut applied to remove noisy events

@@ -92,7 +92,7 @@ def fit_hist(xdata, ydata, peaks_guess, heights_guess, cfg):
     return popt_tot, perr_tot
     
 
-def fit_hist_alpha_bump(xdata, ydata, peak_guess, height_guess, cfg):
+def fit_hist_alpha_bump(xdata, ydata, peak_guess, height_guess, cfg, model=combined_gaus_with_exp):
     
     bound_low = [
         height_guess * (1 - cfg["alpha"]["bound_frac_height"]),
@@ -110,7 +110,20 @@ def fit_hist_alpha_bump(xdata, ydata, peak_guess, height_guess, cfg):
         cfg["alpha"]["exp_tau_high"]
     ]
     
-    popt_tot, pcov = curve_fit(combined_gaus_with_exp, xdata, ydata, bounds=(bound_low, bound_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    if model==gaus:
+        bound_low = [
+            height_guess * (1 - cfg["alpha"]["bound_frac_height"]),
+            peak_guess * (1 - cfg["alpha"]["bound_frac_peak"]),
+            cfg["alpha"]["width_low"]
+        ]
+
+        bound_high = [
+            height_guess * (1 + cfg["alpha"]["bound_frac_height"]),
+            peak_guess * (1 + cfg["alpha"]["bound_frac_peak"]),
+            cfg["alpha"]["width_high"]
+        ]
+    
+    popt_tot, pcov = curve_fit(model, xdata, ydata, bounds=(bound_low, bound_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
     perr_tot = np.sqrt(np.diag(pcov))
     
     return popt_tot, perr_tot

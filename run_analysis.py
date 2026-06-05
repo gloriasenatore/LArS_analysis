@@ -68,14 +68,14 @@ def main():
         calib_SPE = functions.read_from_file("observables/"+functions.make_output_name(filename, prefix="obs", ext=".txt"), obs="SPE", N=1)
         bins= cfg["alpha"]["bins"]
         _range=(cfg["alpha"]["range_low"], cfg["alpha"]["range_high"])
-        histo_alpha = functions.make_histo(df["Integral"]/calib_SPE, bins=bins, _range=_range)
-        centers = (histo_alpha[1][:-1] + histo_alpha[1][1:]) / 2
                 
                 
         if_analyse_alpha_bump_pre_PID = cfg["analysis"]["if_alpha_pre_PID"]
         
         if if_analyse_alpha_bump_pre_PID:
             ## Fitting the alpha bump to obtain light-yield
+            histo_alpha = functions.make_histo(df["Integral"]/calib_SPE, bins=bins, _range=_range)
+            centers = (histo_alpha[1][:-1] + histo_alpha[1][1:]) / 2
             #histo_alpha_smooth = gaussian_filter1d(histo_alpha[0], sigma=2) # Smooth the spectrum and ease the peak finding
             alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e3), prominence=20)
             alpha_peak_PE = alpha_peak[0][0]*(_range[1]-_range[0])/bins+_range[0]
@@ -115,7 +115,40 @@ def main():
             
             gaus_sum = fit_models.gaus_list(centers[50:190], popt_ER[0], popt_ER[1], popt_ER[2]) + fit_models.gaus_list(centers, popt_alpha[0], popt_alpha[1], popt_alpha[2])
             
-            print(np.argmin(gaus_sum)/bins)
+            PID_cut = np.argmin(gaus_sum)/bins
+            alpha_evts = df_PE_cut[df_PE_cut["Prompt"] >= PID_cut]
+            ER_evts = df_PE_cut[df_PE_cut["Prompt"] < PID_cut]
+            
+            print("Alpha events / tot events before energy cut: " + str(len(alpha_evts)/len(df)*100.) + "%")
+            print("Alpha events / tot events after energy cut: " + str(len(alpha_evts)/len(df_PE_cut)*100.) + "%")
+            
+            ## Fitting the alpha bump to obtain light-yield
+            #histo_alpha_smooth = gaussian_filter1d(histo_alpha[0], sigma=2) # Smooth the spectrum and ease the peak finding
+            bins= cfg["alpha"]["bins"]
+            histo_alpha = functions.make_histo(alpha_evts["Integral"]/calib_SPE, bins=bins, _range=_range)
+            centers = (histo_alpha[1][:-1] + histo_alpha[1][1:]) / 2
+            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e3), prominence=20)
+            alpha_peak_PE = alpha_peak[0][0]*(_range[1]-_range[0])/bins+_range[0]
+            print(alpha_peak[0][0])
+
+            print("\n ################################ \n Fitting histogram to find light-yield")
+            print("Guess peak at " + str(alpha_peak_PE) + " PE, with heights " +str(alpha_peak[2][0]) +" counts")
+            interval = (_range[1]-_range[0])/bins
+            alpha_popt_tot, alpha_perr_tot = data_calibration.fit_hist_alpha_bump(centers[int(cfg["alpha"]["fit_from"]/interval):], histo_alpha[0][int(cfg["alpha"]["fit_from"]/interval):], alpha_peak_PE, alpha_peak[2][0], cfg, model=fit_models.gaus)
+            print("Best fit params alpha bump:" + str(alpha_popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(alpha_perr_tot, alpha_popt_tot)]) + "\n")
+            
+            #data_plot.plot_Integral(alpha_evts, functions.make_output_name(filename, prefix="hist_alpha_evts_Integral", ext=".png"), norm=calib_SPE, bins=bins, _range=_range)
+            
+            data_plot.plot_alpha_spectrum_after_PID(centers, alpha_evts["Integral"]/calib_SPE, df["Integral"]/calib_SPE, bins, _range, alpha_popt_tot, alpha_perr_tot, functions.make_output_name(filename, prefix="light_yield_post_PID", ext=".png"), ylim=(1, 8e5), interval=interval, filename_hist=functions.make_output_name(filename, prefix="light_yield_post_PID", ext=".txt"))
+            
+            with open("observables/"+functions.make_output_name(filename, prefix="obs", ext=".txt"), "a") as f:
+                f.write("light_yield_post_PID \t" + str(alpha_popt_tot[1]) + "\t +- \t" + str(alpha_perr_tot[1])  + "\n")
+                
+            with open("observables/selected_alpha_events/"+functions.make_output_name(filename, prefix="alpha_events", ext=".txt"), "x") as f:
+                for event in alpha_evts["Evtnb"]:
+                    f.write(str(event)+"\n")
+            
+            #TODO: add the possibility to sum together more files before doing the fit to improve the fit, save histo of Fprompt fitting
             
 
 if __name__ == "__main__":
