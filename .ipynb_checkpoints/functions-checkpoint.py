@@ -34,13 +34,29 @@ def make_output_name(filepath, prefix="hist_calib", ext=".png"):
     """
     base = os.path.basename(filepath)
 
-    match = re.search(r"(R\d+)", base)
+    match = re.search(r"(R\d+(?:\+R\d+)*)", base)
     if not match:
         raise ValueError(f"No pattern like R<number> found in {filepath}")
 
     run_tag = match.group(1)
 
     return f"{prefix}_{run_tag}{ext}"
+
+
+def sum_run_string(filenames):
+    runs = []
+
+    for filename in filenames:
+        basename = os.path.basename(filename)
+        match = re.search(r'(R\d+)\.root$', basename)
+
+        if match:
+            runs.append(match.group(1))
+        else:
+            raise ValueError(f"Run number not found in filename: {filename}")
+
+    return "+".join(runs)
+
 
 
 def read_from_file(file_name, obs="SPE", N=1):   

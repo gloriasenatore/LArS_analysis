@@ -85,6 +85,8 @@ def plot_alpha_spectrum(centers, hist, popt_tot, perr_tot, filename, filename_hi
     axs[1].fill_between(centers, y1= - 3, y2= -2 , color='red', alpha=.5)
     axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
     axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    
+    axs[1].set_xlim(min(centers), max(centers))
 
     chi2_red = functions.reduced_chi_square(hist[mini:maxi], comb_list_gaus_with_exp(centers[mini:maxi],*popt_tot), centers, popt_tot)
     print("Fitting done, reduced chi2: " + str(chi2_red))
@@ -124,6 +126,40 @@ def plot_Fprompt(df, filename):
     plt.hist(df["Prompt"], bins=200, range=(0, 1), histtype='step')
     plt.savefig("plots/light_yield_after_PID/"+filename, bbox_inches='tight')
     
+    
+def plot_Fprompt_fitted(centers, hist, hist_tot, bins, gaus_sum, popt_ER, popt_alpha, filename, cut, fprompt_fit_min, fprompt_fit_max, ylims=(1, 1e5)):
+    fig = plt.figure(figsize=(10,6))
+    gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
+    axs = gs.subplots(sharex=True, sharey=False)
+    
+    axs[0].hist(hist_tot["Prompt"], bins=200, range=(0, 1), histtype='step', label='Before bkg cut', color='blue')
+    hist = axs[0].hist(hist["Prompt"], bins=200, range=(0, 1), histtype='step', label='After bkg cut', color='orange')
+    
+    axs[0].plot(centers[fprompt_fit_min:fprompt_fit_max],gaus_sum,'-', color='green',label=r'Gaussian fits: $\mu_{ER}=$'+str('%.3f' %popt_ER[1])+" $\mu_{NR}=$"+str('%.3f' %popt_alpha[1]))
+    axs[0].vlines(cut, 1, max(popt_ER[0], popt_alpha[0]), color='fuchsia', label='PID cut at '+str('%.2f' %cut))
+
+    axs[0].set_yscale('log')
+    axs[0].set_ylim(ylims)
+    axs[0].legend(loc='upper right', frameon=False, fontsize=17)
+    axs[0].set_ylabel("Counts", fontsize=19)
+    
+    axs[1].set_xlabel("Fprompt", fontsize=19)
+    res_ER = functions.residuals(hist[0][int(popt_ER[1]*bins)-20:int(popt_ER[1]*bins)+20], gaus_sum[int(popt_ER[1]*bins)-fprompt_fit_min-20:int(popt_ER[1]*bins)-fprompt_fit_min+20])
+    res_alpha = functions.residuals(hist[0][int(popt_alpha[1]*bins)-20:int(popt_alpha[1]*bins)+20], gaus_sum[int(popt_alpha[1]*bins)-fprompt_fit_min-20:int(popt_alpha[1]*bins)-fprompt_fit_min+20])
+    
+    axs[1].scatter(centers[int(popt_ER[1]*bins)-20:int(popt_ER[1]*bins)+20], res_ER, marker='.', linestyle='None', color='black')
+    axs[1].scatter(centers[int(popt_alpha[1]*bins)-20:int(popt_alpha[1]*bins)+20], res_alpha, marker='.', linestyle='None', color='black')
+    axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
+    axs[1].fill_between(centers, y1= - 2, y2= -1, color='orange', alpha=.5)
+    axs[1].fill_between(centers, y1= 1, y2= 2, color='orange', alpha=.5)
+    axs[1].fill_between(centers, y1= - 3, y2= -2 , color='red', alpha=.5)
+    axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
+    axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    
+    axs[1].set_xlim(0, 1)
+    
+    plt.savefig("plots/light_yield_after_PID/"+filename, bbox_inches='tight')
+    
 
 def plot_Integral(df, filename, norm, bins, _range):
     fig = plt.figure(figsize=(10,6))
@@ -133,7 +169,7 @@ def plot_Integral(df, filename, norm, bins, _range):
     
     
     
-def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_tot, perr_tot, filename, filename_hist, ylim=(7e-1, 6e5), interval=5):
+def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_tot, perr_tot, filename, ylim=(7e-1, 6e5), interval=5):
     fig = plt.figure(figsize=(10,6))
     gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
     axs = gs.subplots(sharex=True, sharey=False)
@@ -142,8 +178,8 @@ def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_to
     hist_alpha = axs[0].hist(hist, bins=bins, range=_range, histtype='step', label='after bkg & PID cuts', color='orange')
     axs[0].set_ylim(ylim)
     
-    mini=int((popt_tot[1]-120)/interval)
-    maxi=int((popt_tot[1]+120)/interval)
+    mini=int((popt_tot[1]-150)/interval)
+    maxi=int((popt_tot[1]+150)/interval)
     
     axs[0].plot(centers[mini:maxi], gaus_list(centers[mini:maxi],popt_tot[0],popt_tot[1],popt_tot[2]),'-', color='red', label=r'alpha peak' +"\n"+ '$\mu=$('+str('%.1f' % popt_tot[1])+"$\pm$"+str('%.1f' %perr_tot[1])+") PE" +"\n"+  "$\sigma=$("+str('%.1f' % popt_tot[2])+"$\pm$"+str('%.1f' % perr_tot[2])+") PE")
     axs[0].set_yscale('log')
@@ -163,7 +199,7 @@ def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_to
     axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
     axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
     
-    plt.margins(x=0)
+    axs[1].set_xlim(min(centers), max(centers))
 
     chi2_red = functions.reduced_chi_square(hist_alpha[0][mini:maxi], gaus_list(centers[mini:maxi],*popt_tot), centers, popt_tot)
     print("Fitting done, reduced chi2: " + str(chi2_red))

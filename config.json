@@ -1,7 +1,8 @@
 {
   "analysis": {
-    "if_calibrate": false,
-    "if_alpha_pre_PID": false,
+    "concatenate_files": true,
+    "if_calibrate": true,
+    "if_alpha_pre_PID": true,
     "if_alpha_post_PID": true
   },
   "noise": {
@@ -49,11 +50,14 @@
  "PID_analysis": {
     "PE_cut": 200,
     "prompt_bins": 200,
+    "fprompt_fit_min": 0.2,
+    "fprompt_fit_max": 0.9,
     "bound_frac_height": 0.2,
     "bound_frac_peak": 0.2,
     "width_low": 0.02,
     "width_high": 0.5,
-    "fit_interval_frac": 0.3
- }
+    "fit_interval_frac": 0.3,
+    "save_alpha_evts_to_file": false 
+}
 
 } 
