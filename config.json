@@ -1,9 +1,13 @@
 {
+  "import_tree": {
+    "store_traces": true
+  },
   "analysis": {
-    "concatenate_files": true,
-    "if_calibrate": true,
-    "if_alpha_pre_PID": true,
-    "if_alpha_post_PID": true
+    "concatenate_files": false,
+    "if_calibrate": false,
+    "if_alpha_pre_PID": false,
+    "if_alpha_post_PID": false,
+    "if_triplet_lifetime": true
   },
   "noise": {
     "width": 3.0,
@@ -58,6 +62,12 @@
     "width_high": 0.5,
     "fit_interval_frac": 0.3,
     "save_alpha_evts_to_file": false 
-}
+ },
+ "triplet_lifetime": {
+    "n_samples": 800,
+    "lower_boundary_fit": 100,
+    "upper_boundary_fit": 400
+ }
+ 
 
 } 

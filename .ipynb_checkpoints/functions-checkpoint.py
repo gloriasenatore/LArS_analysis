@@ -58,14 +58,13 @@ def sum_run_string(filenames):
     return "+".join(runs)
 
 
+def stack_waveforms(df, n_samples=800):
+    sum_traces = np.zeros(shape=(n_samples))
 
-def read_from_file(file_name, obs="SPE", N=1):   
-    with open(file_name, "r") as f:
-        for line in f:
-            field = line.split()
-            if field[0] == obs:
-                var = float(field[N])
-                break
+    for event in df["Evtnb"]:
+        lefte = df["Leftedge"].loc[event][0]
+        for i in range(len(sum_traces)-lefte):
+            sum_traces[i] += df["Traces"].loc[event][lefte+i]/np.max(df["Peaks_area"].loc[event])
             
-    return var
+    return sum_traces
     

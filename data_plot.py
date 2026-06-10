@@ -208,3 +208,30 @@ def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_to
     else:
         print("WARNING: not very good fit, saved in bad")
         plt.savefig("plots/light_yield_after_PID/bad/"+filename, bbox_inches='tight')
+        
+        
+def plot_fitted_stacked_wvfs(samples, traces_ER, traces_alpha, traces_all, popt_ER, perr_ER, popt_alpha cfg):
+    
+    lower_boundary = cfg["triplet_lifetime"]["lower_boundary_fit"]
+    upper_boundary = cfg["triplet_lifetime"]["upper_boundary_fit"]
+    
+    fig, ax = plt.subplots(figsize=(10,6))
+    gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
+    axs = gs.subplots(sharex=True, sharey=False)
+    
+    axs[0].hist(samples, bins = len(samples), weights = traces_all, histtype='step', label="ER+alpha stacked waveform", color='grey', alpha=0.7)
+    axs[0].hist(samples, bins = len(samples), weights = traces_ER, histtype='step', label="ER stacked waveform", color='blue')
+    axs[0].hist(samples, bins = len(samples), weights = traces_alpha, histtype='step', label="alpha stacked waveform", color='orange')
+
+    plt.plot(samples[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER),'--', color='red', label=r'exponential fit ER $\tau_t$=('+str('%.0f' % popt_ER[1])+"$\pm$"+str('%.0f' % perr_ER[1])+") ns")
+    #plt.plot(samples[100:400],expp(samples[100:400], *popt_NR),'--', color='black', label=r'exponential fit NR $\tau_t$=('+str('%.0f' % popt_NR[1])+"$\pm$"+str('%.0f' % perr_NR[1])+") ns")
+    #plt.plot(samples[5:17],expp(samples[5:17], *popt_pet2),'--', color='green', label=r'exponential fit $\tau_t$=('+str('%.1f' % popt_pet2[1])+"$\pm$"+str('%.1f' % perr_pet2[1])+") ns")
+
+    #plt.plot(samples-leftedge[49][0], traces[49])
+    plt.yscale("log")
+    plt.xlim(-50,7200)
+    plt.xlabel("Time [ns]", fontsize=19)
+    plt.ylabel("Normalized pulse amplitude", fontsize=19)
+    ax.xaxis.set_minor_locator(AutoMinorLocator())
+    plt.legend(fontsize=19, frameon=False)
+    #plt.savefig("stacked_wf/black_test_cell/R16+R17+R18+R19_only_ER.png", bbox_inches='tight')

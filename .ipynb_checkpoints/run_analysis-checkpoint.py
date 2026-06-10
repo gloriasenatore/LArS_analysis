@@ -40,11 +40,11 @@ def main():
     
     if cfg["analysis"]["concatenate_files"]:
         name = functions.sum_run_string(args.filenames)
-        dfs = pd.concat([data_io.import_tree(filename) for filename in args.filenames], axis=0, ignore_index=True)
+        dfs = pd.concat([data_io.import_tree(filename, store_traces=cfg["import_tree"]["store_traces"]) for filename in args.filenames], axis=0, ignore_index=True)
         print("\n Total number of waveforms to analyze: " + str(len(dfs)))
         dfs = [dfs]
     else:
-        dfs = [data_io.import_tree(filename) for filename in args.filenames]
+        dfs = [data_io.import_tree(filename, store_traces=cfg["import_tree"]["store_traces"]) for filename in args.filenames]
     
     #for filename in args.filenames:
     for df, filename in zip(dfs, args.filenames):
@@ -79,7 +79,7 @@ def main():
                 f.write("SPE \t" + str(calib_popt_tot[4]) + "\t +- \t" + str(calib_perr_tot[4]) + "\n")
                 
                 
-        calib_SPE = functions.read_from_file("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), obs="SPE", N=1)
+        calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), obs="SPE", N=1)
         bins= cfg["alpha"]["bins"]
         _range=(cfg["alpha"]["range_low"], cfg["alpha"]["range_high"])
                 
@@ -167,6 +167,30 @@ def main():
                 with open("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt"), "x") as f:
                     for event in alpha_evts["Evtnb"]:
                         f.write(str(event)+"\n")
+                        
+                        
+        if_triplet_lifetime = cfg["analysis"]["if_triplet_lifetime"]
+        
+        if if_triplet_lifetime:
+            print("\n ################################ \n Fitting stacked waveforms to find triplet lifetime")
+            evtnb = data_io.open_file("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt"))
+            df_PE_cut = df[(df["Integral"]/calib_SPE > cfg["PID_analysis"]["PE_cut"])]
+            ER_evts = df_PE_cut.drop(evtnb)
+            alpha_evts = df_PE_cut[df_PE_cut["Evtnb"].isin(evtnb)]
+            
+            alpha_wvf = functions.stack_waveforms(alpha_evts, n_samples=cfg["triplet_lifetime"]["n_samples"])
+            ER_wvf = functions.stack_waveforms(ER_evts, n_samples=cfg["triplet_lifetime"]["n_samples"])
+            tot_wvf = functions.stack_waveforms(df_PE_cut, n_samples=cfg["triplet_lifetime"]["n_samples"])
+            
+            popt_alpha, perr_alpha = data_calibration.fit_stacked_waveforms(alpha_wvf, cfg)
+            popt_ER, perr_ER = data_calibration.fit_stacked_waveforms(ER_wvf, cfg)
+            popt_tot, perr_tot = data_calibration.fit_stacked_waveforms(tot_wvf, cfg)
+            
+            print("Best fit params: ER: " + str(popt_ER) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_ER, popt_ER)]) + "\n")
+            print("Best fit params: alpha: " + str(popt_alpha) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_alpha, popt_alpha)]) + "\n")
+            print("Best fit params: ER+alpha: " + str(popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_tot, popt_tot)]) + "\n")
+            
+            plot_fitted_stacked_wvfs
             
 
 if __name__ == "__main__":

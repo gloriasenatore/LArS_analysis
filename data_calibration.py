@@ -3,7 +3,7 @@
 from scipy.signal import find_peaks
 import numpy as np
 from scipy.optimize import curve_fit
-from fit_models import calib_fit_model, combined_gaus_with_exp, gaus
+from fit_models import calib_fit_model, combined_gaus_with_exp, gaus, expp
 
 def small_pulses(df):
     areas = []
@@ -178,3 +178,17 @@ def fit_fprompt(xdata, ydata, peaks_guess, heights_guess, cfg, interval = 0.005)
     perr_alpha = np.sqrt(np.diag(pcov))
     
     return popt_ER, perr_ER, popt_alpha, perr_alpha
+
+
+
+def fit_stacked_waveforms(ydata, cfg, model=expp):
+    
+    samples = np.linspace(0, 8000, 800, endpoint=False)
+    
+    lower_boundary = cfg["triplet_lifetime"]["lower_boundary_fit"]
+    upper_boundary = cfg["triplet_lifetime"]["upper_boundary_fit"]
+    
+    popt, pcov = curve_fit(expp, samples[lower_boundary:upper_boundary], ydata[lower_boundary:upper_boundary], bounds=[[0.1,500],[1000, 4000]], absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    perr = np.sqrt(np.diag(pcov))
+    
+    return popt, perr
