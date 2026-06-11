@@ -181,9 +181,9 @@ def fit_fprompt(xdata, ydata, peaks_guess, heights_guess, cfg, interval = 0.005)
 
 
 
-def fit_stacked_waveforms(ydata, cfg, model=expp):
+def fit_stacked_waveforms(ydata, cfg, model=expp, n_samples=800):
     
-    samples = np.linspace(0, 8000, 800, endpoint=False)
+    samples = np.linspace(0, int(n_samples*10), int(n_samples), endpoint=False)
     
     lower_boundary = cfg["triplet_lifetime"]["lower_boundary_fit"]
     upper_boundary = cfg["triplet_lifetime"]["upper_boundary_fit"]

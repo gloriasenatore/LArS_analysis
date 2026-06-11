@@ -15,6 +15,13 @@ def residuals(obs, model):
         res.append( (obs[i] - model[i]) / np.sqrt(model[i]) )
         
     return res
+
+
+def residuals_staked_wvfs(obs, model, n_wvfs):
+    sigma = np.std(waveforms, axis=0) / np.sqrt(N)
+    res = []
+    for i in range (len(obs)):
+    pulls = (data - model)/sigma
         
         
 def reduced_chi_square(obs, model, centers, popt_tot):

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib.ticker import AutoMinorLocator
+import numpy as np
 import legendstyles
 plt.style.use(legendstyles.LEGEND)
 plt.rcParams['xtick.labelsize']=20
@@ -210,28 +211,53 @@ def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_to
         plt.savefig("plots/light_yield_after_PID/bad/"+filename, bbox_inches='tight')
         
         
-def plot_fitted_stacked_wvfs(samples, traces_ER, traces_alpha, traces_all, popt_ER, perr_ER, popt_alpha cfg):
+def plot_fitted_stacked_wvfs(traces_all, traces_ER, traces_alpha, popt_all, perr_all, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, filename, n_samples=800, xlims=(-50,7200)):
     
     lower_boundary = cfg["triplet_lifetime"]["lower_boundary_fit"]
     upper_boundary = cfg["triplet_lifetime"]["upper_boundary_fit"]
     
-    fig, ax = plt.subplots(figsize=(10,6))
+    fig = plt.figure(figsize=(10,6))
     gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
     axs = gs.subplots(sharex=True, sharey=False)
+    
+    samples = np.linspace(0, int(n_samples*10), int(n_samples), endpoint=False)
     
     axs[0].hist(samples, bins = len(samples), weights = traces_all, histtype='step', label="ER+alpha stacked waveform", color='grey', alpha=0.7)
     axs[0].hist(samples, bins = len(samples), weights = traces_ER, histtype='step', label="ER stacked waveform", color='blue')
     axs[0].hist(samples, bins = len(samples), weights = traces_alpha, histtype='step', label="alpha stacked waveform", color='orange')
 
-    plt.plot(samples[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER),'--', color='red', label=r'exponential fit ER $\tau_t$=('+str('%.0f' % popt_ER[1])+"$\pm$"+str('%.0f' % perr_ER[1])+") ns")
-    #plt.plot(samples[100:400],expp(samples[100:400], *popt_NR),'--', color='black', label=r'exponential fit NR $\tau_t$=('+str('%.0f' % popt_NR[1])+"$\pm$"+str('%.0f' % perr_NR[1])+") ns")
-    #plt.plot(samples[5:17],expp(samples[5:17], *popt_pet2),'--', color='green', label=r'exponential fit $\tau_t$=('+str('%.1f' % popt_pet2[1])+"$\pm$"+str('%.1f' % perr_pet2[1])+") ns")
+    axs[0].plot(samples[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_all),'--', color='black', alpha=0.7, label=r'exponential fit ER+alpha $\tau_t$=('+str('%.0f' % popt_all[1])+"$\pm$"+str('%.0f' % perr_all[1])+") ns")
+    axs[0].plot(samples[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER),'--', color='red', label=r'exponential fit ER $\tau_t$=('+str('%.0f' % popt_ER[1])+"$\pm$"+str('%.0f' % perr_ER[1])+") ns")
+    axs[0].plot(samples[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_alpha),'--', color='green', label=r'exponential fit alpha $\tau_t$=('+str('%.0f' % popt_alpha[1])+"$\pm$"+str('%.0f' % perr_alpha[1])+") ns")
 
-    #plt.plot(samples-leftedge[49][0], traces[49])
-    plt.yscale("log")
-    plt.xlim(-50,7200)
-    plt.xlabel("Time [ns]", fontsize=19)
-    plt.ylabel("Normalized pulse amplitude", fontsize=19)
-    ax.xaxis.set_minor_locator(AutoMinorLocator())
-    plt.legend(fontsize=19, frameon=False)
-    #plt.savefig("stacked_wf/black_test_cell/R16+R17+R18+R19_only_ER.png", bbox_inches='tight')
+    axs[0].set_yscale("log")
+    axs[0].set_ylabel("Normalized pulse amplitude", fontsize=19)
+    axs[0].legend(fontsize=19, frameon=False)
+    
+    axs[1].set_xlabel("Time [ns]", fontsize=19)
+    axs[1].set_xlim(xlims)
+    axs[1].xaxis.set_minor_locator(AutoMinorLocator())
+    
+    res_all = functions.residuals(traces_all[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_all))
+    res_ER = functions.residuals(traces_ER[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER))
+    res_alpha = functions.residuals(traces_alpha[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_alpha))
+    
+    axs[1].scatter(samples[lower_boundary:upper_boundary], res_all, marker='.', linestyle='None', color='black', alpha=0.7)
+    axs[1].scatter(samples[lower_boundary:upper_boundary], res_ER, marker='.', linestyle='None', color='red')
+    axs[1].scatter(samples[lower_boundary:upper_boundary], res_alpha, marker='.', linestyle='None', color='green')
+
+    axs[1].fill_between(samples, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
+    axs[1].fill_between(samples, y1= - 2, y2= -1, color='orange', alpha=.5)
+    axs[1].fill_between(samples, y1= 1, y2= 2, color='orange', alpha=.5)
+    axs[1].fill_between(samples, y1= - 3, y2= -2 , color='red', alpha=.5)
+    axs[1].fill_between(samples, y1= 2, y2= 3, color='red', alpha=.5)
+    axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    
+    chi2_red_all = functions.reduced_chi_square(traces_all[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_all), samples, popt_all)
+    chi2_red_ER = functions.reduced_chi_square(traces_ER[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER), samples, popt_ER)
+    chi2_red_alpha = functions.reduced_chi_square(traces_alpha[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_alpha), samples, popt_alpha)
+    print("ER+alpha fit done, reduced chi2: " + str(chi2_red_all))
+    print("ER fit done, reduced chi2: " + str(chi2_red_ER))
+    print("alpha fit done, reduced chi2: " + str(chi2_red_alpha))
+    
+    plt.savefig("plots/triplet_lifetime/"+filename, bbox_inches='tight')
