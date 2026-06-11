@@ -40,13 +40,14 @@ def plot_calib_spectrum(centers, hist, popt_tot, perr_tot, filename, ylim=(1e1, 
     
     res = functions.residuals(hist, calib_fit_model(centers,*popt_tot))
 
-    axs[1].plot(res, marker='.', linestyle='None', color='black')
+    
     axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
     axs[1].fill_between(centers, y1= - 2, y2= -1, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= 1, y2= 2, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= - 3, y2= -2 , color='red', alpha=.5)
     axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
     axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    axs[1].plot(res, marker='.', linestyle='None', color='black')
 
     chi2_red = functions.reduced_chi_square(hist, calib_fit_model(centers,*popt_tot), centers, popt_tot)
     print("Fitting done, reduced chi2: " + str(chi2_red))
@@ -79,13 +80,14 @@ def plot_alpha_spectrum(centers, hist, popt_tot, perr_tot, filename, filename_hi
     
     res = functions.residuals(hist[mini:maxi], comb_list_gaus_with_exp(centers[mini:maxi],*popt_tot))
     
-    axs[1].scatter(centers[mini:maxi], res, marker='.', linestyle='None', color='black')
+    
     axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
     axs[1].fill_between(centers, y1= - 2, y2= -1, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= 1, y2= 2, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= - 3, y2= -2 , color='red', alpha=.5)
     axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
     axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    axs[1].scatter(centers[mini:maxi], res, marker='.', linestyle='None', color='black')
     
     axs[1].set_xlim(min(centers), max(centers))
 
@@ -148,14 +150,15 @@ def plot_Fprompt_fitted(centers, hist, hist_tot, bins, gaus_sum, popt_ER, popt_a
     res_ER = functions.residuals(hist[0][int(popt_ER[1]*bins)-20:int(popt_ER[1]*bins)+20], gaus_sum[int(popt_ER[1]*bins)-fprompt_fit_min-20:int(popt_ER[1]*bins)-fprompt_fit_min+20])
     res_alpha = functions.residuals(hist[0][int(popt_alpha[1]*bins)-20:int(popt_alpha[1]*bins)+20], gaus_sum[int(popt_alpha[1]*bins)-fprompt_fit_min-20:int(popt_alpha[1]*bins)-fprompt_fit_min+20])
     
-    axs[1].scatter(centers[int(popt_ER[1]*bins)-20:int(popt_ER[1]*bins)+20], res_ER, marker='.', linestyle='None', color='black')
-    axs[1].scatter(centers[int(popt_alpha[1]*bins)-20:int(popt_alpha[1]*bins)+20], res_alpha, marker='.', linestyle='None', color='black')
+    
     axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
     axs[1].fill_between(centers, y1= - 2, y2= -1, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= 1, y2= 2, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= - 3, y2= -2 , color='red', alpha=.5)
     axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
     axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    axs[1].scatter(centers[int(popt_ER[1]*bins)-20:int(popt_ER[1]*bins)+20], res_ER, marker='.', linestyle='None', color='black')
+    axs[1].scatter(centers[int(popt_alpha[1]*bins)-20:int(popt_alpha[1]*bins)+20], res_alpha, marker='.', linestyle='None', color='black')
     
     axs[1].set_xlim(0, 1)
     
@@ -192,13 +195,14 @@ def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_to
     
     res = functions.residuals(hist_alpha[0][mini:maxi], gaus_list(centers[mini:maxi],*popt_tot))
     
-    axs[1].scatter(centers[mini:maxi], res, marker='.', linestyle='None', color='black')
+    
     axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
     axs[1].fill_between(centers, y1= - 2, y2= -1, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= 1, y2= 2, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= - 3, y2= -2 , color='red', alpha=.5)
     axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
     axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    axs[1].scatter(centers[mini:maxi], res, marker='.', linestyle='None', color='black')
     
     axs[1].set_xlim(min(centers), max(centers))
 
@@ -222,9 +226,9 @@ def plot_fitted_stacked_wvfs(traces_all, traces_ER, traces_alpha, popt_all, perr
     
     samples = np.linspace(0, int(n_samples*10), int(n_samples), endpoint=False)
     
-    axs[0].hist(samples, bins = len(samples), weights = traces_all, histtype='step', label="ER+alpha stacked waveform", color='grey', alpha=0.7)
-    axs[0].hist(samples, bins = len(samples), weights = traces_ER, histtype='step', label="ER stacked waveform", color='blue')
-    axs[0].hist(samples, bins = len(samples), weights = traces_alpha, histtype='step', label="alpha stacked waveform", color='orange')
+    axs[0].hist(samples, bins = len(samples), weights = traces_all[0], histtype='step', label="ER+alpha stacked waveform", color='grey', alpha=0.7)
+    axs[0].hist(samples, bins = len(samples), weights = traces_ER[0], histtype='step', label="ER stacked waveform", color='blue')
+    axs[0].hist(samples, bins = len(samples), weights = traces_alpha[0], histtype='step', label="alpha stacked waveform", color='orange')
 
     axs[0].plot(samples[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_all),'--', color='black', alpha=0.7, label=r'exponential fit ER+alpha $\tau_t$=('+str('%.0f' % popt_all[1])+"$\pm$"+str('%.0f' % perr_all[1])+") ns")
     axs[0].plot(samples[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER),'--', color='red', label=r'exponential fit ER $\tau_t$=('+str('%.0f' % popt_ER[1])+"$\pm$"+str('%.0f' % perr_ER[1])+") ns")
@@ -232,30 +236,31 @@ def plot_fitted_stacked_wvfs(traces_all, traces_ER, traces_alpha, popt_all, perr
 
     axs[0].set_yscale("log")
     axs[0].set_ylabel("Normalized pulse amplitude", fontsize=19)
-    axs[0].legend(fontsize=19, frameon=False)
+    axs[0].legend(fontsize=15, frameon=False)
     
     axs[1].set_xlabel("Time [ns]", fontsize=19)
     axs[1].set_xlim(xlims)
     axs[1].xaxis.set_minor_locator(AutoMinorLocator())
     
-    res_all = functions.residuals(traces_all[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_all))
-    res_ER = functions.residuals(traces_ER[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER))
-    res_alpha = functions.residuals(traces_alpha[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_alpha))
+    res_all = functions.residuals(traces_all[0][lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_all), sigma=traces_all[1][lower_boundary:upper_boundary])
+    res_ER = functions.residuals(traces_ER[0][lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER), sigma=traces_ER[1][lower_boundary:upper_boundary])
+    res_alpha = functions.residuals(traces_alpha[0][lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_alpha), sigma=traces_alpha[1][lower_boundary:upper_boundary])
+   
+
+    axs[1].fill_between(samples, y1= 0 - 10, y2= 0 + 10, color='green', alpha=.5)
+    axs[1].fill_between(samples, y1= - 20, y2= -10, color='orange', alpha=.5)
+    axs[1].fill_between(samples, y1= 10, y2= 20, color='orange', alpha=.5)
+    axs[1].fill_between(samples, y1= - 30, y2= -20 , color='red', alpha=.5)
+    axs[1].fill_between(samples, y1= 20, y2= 30, color='red', alpha=.5)
+    axs[1].set_ylabel(r'Res [%]', fontsize=19)
     
     axs[1].scatter(samples[lower_boundary:upper_boundary], res_all, marker='.', linestyle='None', color='black', alpha=0.7)
     axs[1].scatter(samples[lower_boundary:upper_boundary], res_ER, marker='.', linestyle='None', color='red')
     axs[1].scatter(samples[lower_boundary:upper_boundary], res_alpha, marker='.', linestyle='None', color='green')
-
-    axs[1].fill_between(samples, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
-    axs[1].fill_between(samples, y1= - 2, y2= -1, color='orange', alpha=.5)
-    axs[1].fill_between(samples, y1= 1, y2= 2, color='orange', alpha=.5)
-    axs[1].fill_between(samples, y1= - 3, y2= -2 , color='red', alpha=.5)
-    axs[1].fill_between(samples, y1= 2, y2= 3, color='red', alpha=.5)
-    axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
     
-    chi2_red_all = functions.reduced_chi_square(traces_all[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_all), samples, popt_all)
-    chi2_red_ER = functions.reduced_chi_square(traces_ER[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER), samples, popt_ER)
-    chi2_red_alpha = functions.reduced_chi_square(traces_alpha[lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_alpha), samples, popt_alpha)
+    chi2_red_all = functions.reduced_chi_square(traces_all[0][lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_all), samples, popt_all, sigma=traces_all[1][lower_boundary:upper_boundary])
+    chi2_red_ER = functions.reduced_chi_square(traces_ER[0][lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_ER), samples, popt_ER, sigma=traces_ER[1][lower_boundary:upper_boundary])
+    chi2_red_alpha = functions.reduced_chi_square(traces_alpha[0][lower_boundary:upper_boundary], exp_list(samples[lower_boundary:upper_boundary], *popt_alpha), samples, popt_alpha, sigma=traces_alpha[1][lower_boundary:upper_boundary])
     print("ER+alpha fit done, reduced chi2: " + str(chi2_red_all))
     print("ER fit done, reduced chi2: " + str(chi2_red_ER))
     print("alpha fit done, reduced chi2: " + str(chi2_red_alpha))

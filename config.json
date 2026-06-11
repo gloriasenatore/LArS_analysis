@@ -65,8 +65,8 @@
  },
  "triplet_lifetime": {
     "n_samples": 800,
-    "lower_boundary_fit": 100,
-    "upper_boundary_fit": 400
+    "lower_boundary_fit": 80,
+    "upper_boundary_fit": 380
  }
  
 

@@ -181,16 +181,22 @@ def main():
             alpha_wvf = functions.stack_waveforms(alpha_evts, n_samples=cfg["triplet_lifetime"]["n_samples"])
             ER_wvf = functions.stack_waveforms(ER_evts, n_samples=cfg["triplet_lifetime"]["n_samples"])
             tot_wvf = functions.stack_waveforms(df_PE_cut, n_samples=cfg["triplet_lifetime"]["n_samples"])
+            print(str(tot_wvf[1][1]) + " " + str(tot_wvf[1][2]) + " " + str(tot_wvf[1][500]))
             
-            popt_alpha, perr_alpha = data_calibration.fit_stacked_waveforms(alpha_wvf, cfg, n_samples=cfg["triplet_lifetime"]["n_samples"])
-            popt_ER, perr_ER = data_calibration.fit_stacked_waveforms(ER_wvf, cfg, n_samples=cfg["triplet_lifetime"]["n_samples"])
-            popt_tot, perr_tot = data_calibration.fit_stacked_waveforms(tot_wvf, cfg, n_samples=cfg["triplet_lifetime"]["n_samples"])
+            popt_alpha, perr_alpha = data_calibration.fit_stacked_waveforms(alpha_wvf[0], cfg, n_samples=cfg["triplet_lifetime"]["n_samples"], sigma=alpha_wvf[1])
+            popt_ER, perr_ER = data_calibration.fit_stacked_waveforms(ER_wvf[0], cfg, n_samples=cfg["triplet_lifetime"]["n_samples"], sigma=ER_wvf[1])
+            popt_tot, perr_tot = data_calibration.fit_stacked_waveforms(tot_wvf[0], cfg, n_samples=cfg["triplet_lifetime"]["n_samples"], sigma=tot_wvf[1])
             
+            print("Best fit params: ER+alpha: " + str(popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_tot, popt_tot)]) + "\n")
             print("Best fit params: ER: " + str(popt_ER) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_ER, popt_ER)]) + "\n")
             print("Best fit params: alpha: " + str(popt_alpha) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_alpha, popt_alpha)]) + "\n")
-            print("Best fit params: ER+alpha: " + str(popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_tot, popt_tot)]) + "\n")
             
             data_plot.plot_fitted_stacked_wvfs(tot_wvf, ER_wvf, alpha_wvf, popt_tot, perr_tot, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, functions.make_output_name(name, prefix="staked_wvfs_fitted", ext=".png"), n_samples=cfg["triplet_lifetime"]["n_samples"], xlims=(-50,cfg["triplet_lifetime"]["n_samples"]*10))
+            
+            with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
+                f.write("triplet_lifetime_ER+alpha \t" + str(popt_tot[1]) + "\t +- \t" + str(perr_tot[1])  + "\n")
+                f.write("triplet_lifetime_ER \t" + str(popt_ER[1]) + "\t +- \t" + str(perr_ER[1])  + "\n")
+                f.write("triplet_lifetime_alpha \t" + str(popt_alpha[1]) + "\t +- \t" + str(perr_alpha[1])  + "\n")
             
 
 if __name__ == "__main__":
