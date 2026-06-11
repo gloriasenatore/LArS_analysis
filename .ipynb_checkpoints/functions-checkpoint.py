@@ -86,4 +86,15 @@ def stack_waveforms(df, n_samples=800):
     sigma_mean = (np.nanstd(wvfs_bin, axis=0, ddof=1) / np.sqrt(n_bin))
 
     return sum_traces, sigma_mean
+
+
+def integrate_interval(df, cfg):
     
+    lower_boundary = cfg["LED_calibration"]["lower_boundary_integration"]
+    upper_boundary = cfg["LED_calibration"]["upper_boundary_integration"]
+    max_boundary = len(df["Traces"][0])
+    print(max_boundary)
+            
+    sum_traces = np.array([ np.sum(trace[lower_boundary:min(upper_boundary, max_boundary)]) for trace in df["Traces"] ])
+            
+    return sum_traces

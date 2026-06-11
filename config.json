@@ -1,13 +1,13 @@
 {
   "import_tree": {
-    "store_traces": true
+    "store_traces": false
   },
   "analysis": {
-    "concatenate_files": true,
-    "if_calibrate": false,
+    "concatenate_files": false,
+    "if_calibrate": true,
     "if_alpha_pre_PID": false,
     "if_alpha_post_PID": false,
-    "if_triplet_lifetime": true
+    "if_triplet_lifetime": false
   },
   "noise": {
     "width": 3.0,
@@ -67,6 +67,10 @@
     "n_samples": 800,
     "lower_boundary_fit": 80,
     "upper_boundary_fit": 380
+ },
+ "LED_calibration": {
+    "lower_boundary_integration": 700,
+    "upper_boundary_integration": 715
  }
  
 

@@ -36,6 +36,8 @@ def main():
     with open("config.json", "r") as f:
         cfg = json.load(f)
         
+    print("\n ################################################################################### \n LArS PMT post-processed waveform analysis program - Gloria Senatore UZH \n ################################################################################### \n")
+        
     print("\n Number of files: " + str(len(args.filenames)))
     
     if cfg["analysis"]["concatenate_files"]:
@@ -47,7 +49,7 @@ def main():
     else:
         dfs = [data_io.import_tree(filename, store_traces=cfg["import_tree"]["store_traces"]) for filename in args.filenames]
     
-    #for filename in args.filenames:
+    
     for df, filename in zip(dfs, args.filenames):
         if cfg["analysis"]["concatenate_files"]:
             print("\n ################################ \n Summing events in all files. Files: " + str(name))
@@ -65,14 +67,14 @@ def main():
             ## Obtain a rough estimation of the peak positions (pedestal and SPE):
             print("Initial estimation of peak position")
             histo_areas_smooth = gaussian_filter1d(histo_areas[0], sigma=2) # Smooth the spectrum and ease the peak finding
-            peaks = data_calibration.peak_position(histo_areas_smooth, prominence=np.max(histo_areas_smooth)*0.005)
-            print("First peaks at " + str(peaks[0]) + " ADC*ns, with heights " +str(peaks[2]) +" counts")
+            peaks, widths, heights = data_calibration.peak_position(histo_areas_smooth, prominence=np.max(histo_areas_smooth)*0.005)
+            print("First peaks at " + str(peaks) + " ADC*ns, with heights " +str(heights) +" counts")
 
             ## Fitting the histogram in order to obtain SPE peak and calibrate the spectrum
             print("Low histogram fitting")
             centers = (histo_areas[1][:-1] + histo_areas[1][1:]) / 2
 
-            calib_popt_tot, calib_perr_tot = data_calibration.fit_hist(centers, histo_areas[0], peaks[0], peaks[2], cfg)
+            calib_popt_tot, calib_perr_tot = data_calibration.fit_hist(centers, histo_areas[0], peaks, heights, cfg)
             print("Best fit params: " + str(calib_popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(calib_perr_tot, calib_popt_tot)]))
 
             data_plot.plot_calib_spectrum(centers, histo_areas[0], calib_popt_tot, calib_perr_tot, functions.make_output_name(name), ylim=(1e1, 2e6))
