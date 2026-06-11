@@ -3,7 +3,7 @@
     "store_traces": true
   },
   "analysis": {
-    "concatenate_files": false,
+    "concatenate_files": true,
     "if_calibrate": false,
     "if_alpha_pre_PID": false,
     "if_alpha_post_PID": false,
@@ -61,7 +61,7 @@
     "width_low": 0.02,
     "width_high": 0.5,
     "fit_interval_frac": 0.3,
-    "save_alpha_evts_to_file": false 
+    "save_alpha_evts_to_file": true 
  },
  "triplet_lifetime": {
     "n_samples": 800,

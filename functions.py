@@ -67,33 +67,23 @@ def sum_run_string(filenames):
 
 def stack_waveforms(df, n_samples=800):
     sum_traces = np.zeros(shape=(n_samples))
-    zeros = np.full((len(df["Evtnb"]), n_samples), np.nan)
-    wvfs_bin = pd.DataFrame(index = df["Evtnb"], columns=np.arange(n_samples), data=zeros)
+    wvfs_bin = np.full((len(df), n_samples), np.nan)
 
-    for event in df["Evtnb"]:
+    for row_idx, event in enumerate(df["Evtnb"]):
         lefte = df["Leftedge"].loc[event][0]
-        k=0
-        for i in range(len(sum_traces)-lefte):
-            value = df["Traces"].loc[event][lefte+i]/np.max(df["Peaks_area"].loc[event])
-            sum_traces[i] += value
-            wvfs_bin.loc[event, k] = value
-            k=k+1
-            
-    n_bin = wvfs_bin.count(axis=0)
-    sigma_mean = wvfs_bin.std(axis=0) / np.sqrt(n_bin)
-    
-    '''
-    bin_test = 100
+        trace = np.asarray(df["Traces"].loc[event])
+        norm = np.max(df["Peaks_area"].loc[event])
 
-    col = wvfs_bin.iloc[:, bin_test].dropna()
+        aligned = trace[lefte:] / norm
+        
+        L = len(aligned)
 
-    print("N =", len(col))
-    print("mean =", col.mean())
-    print("std =", col.std())
-    print("sem =", col.std()/np.sqrt(len(col)))
-    '''
-    
-    sigma_mean = sigma_mean.to_numpy()
+        sum_traces[:L] += aligned
+        wvfs_bin[row_idx, :L] = aligned
             
+    n_bin = np.sum(~np.isnan(wvfs_bin), axis=0)
+
+    sigma_mean = (np.nanstd(wvfs_bin, axis=0, ddof=1) / np.sqrt(n_bin))
+
     return sum_traces, sigma_mean
     

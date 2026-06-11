@@ -41,6 +41,7 @@ def main():
     if cfg["analysis"]["concatenate_files"]:
         name = functions.sum_run_string(args.filenames)
         dfs = pd.concat([data_io.import_tree(filename, store_traces=cfg["import_tree"]["store_traces"]) for filename in args.filenames], axis=0, ignore_index=True)
+        dfs["Evtnb"] = dfs.index.to_list()
         print("\n Total number of waveforms to analyze: " + str(len(dfs)))
         dfs = [dfs]
     else:
@@ -181,7 +182,6 @@ def main():
             alpha_wvf = functions.stack_waveforms(alpha_evts, n_samples=cfg["triplet_lifetime"]["n_samples"])
             ER_wvf = functions.stack_waveforms(ER_evts, n_samples=cfg["triplet_lifetime"]["n_samples"])
             tot_wvf = functions.stack_waveforms(df_PE_cut, n_samples=cfg["triplet_lifetime"]["n_samples"])
-            print(str(tot_wvf[1][1]) + " " + str(tot_wvf[1][2]) + " " + str(tot_wvf[1][500]))
             
             popt_alpha, perr_alpha = data_calibration.fit_stacked_waveforms(alpha_wvf[0], cfg, n_samples=cfg["triplet_lifetime"]["n_samples"], sigma=alpha_wvf[1])
             popt_ER, perr_ER = data_calibration.fit_stacked_waveforms(ER_wvf[0], cfg, n_samples=cfg["triplet_lifetime"]["n_samples"], sigma=ER_wvf[1])

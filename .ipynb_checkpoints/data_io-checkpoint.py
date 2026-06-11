@@ -6,7 +6,7 @@ import pandas as pd
 def open_file(filename):
     my_file = open(filename, "r")
     lines = my_file.readlines()
-    data = [float(e) for e in lines]
+    data = [int(e) for e in lines]
     my_file.close()
     return data
 
