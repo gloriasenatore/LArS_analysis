@@ -55,3 +55,10 @@ def combined_gaus_LED_calib_delta(xvalues, a0,x00,sigma0, a1,delta,sigma1, a2):
     '''
     return [gaus(xx, a0, x00, sigma0) + gaus(xx, a1, delta+x00, sigma1) + gaus(xx, a2, 2.*delta+x00, np.sqrt(2.)*sigma1)
             for xx in xvalues]
+
+def combined_gaus_LED_calib_free(xvalues, a0,x00,sigma0, a1,x01,sigma1, a2,x02,sigma2):
+    '''
+        This model is just for check if we obtain results compatible to the previous model. In this model, all parameters are free
+    '''
+    return [gaus(xx, a0, x00, sigma0) + gaus(xx, a1, x01, sigma1) + gaus(xx, a2, x02, sigma2)
+            for xx in xvalues]

@@ -3,7 +3,7 @@
 from scipy.signal import find_peaks
 import numpy as np
 from scipy.optimize import curve_fit
-from fit_models import calib_fit_model, combined_gaus_with_exp, gaus, expp, combined_gaus_LED_calib_delta
+from fit_models import calib_fit_model, combined_gaus_with_exp, gaus, expp, combined_gaus_LED_calib_delta, combined_gaus_LED_calib_free
 
 def small_pulses(df):
     areas = []
@@ -200,7 +200,7 @@ def fit_LED_calibration(xdata, ydata, cfg, model=combined_gaus_LED_calib_delta):
     bound_low = [
         1e3, #a0
         -5., #x00
-        5.,  #sigma0
+        1.,  #sigma0
         1e2, #a1
         20., #delta
         10., #sigma1
@@ -210,12 +210,38 @@ def fit_LED_calibration(xdata, ydata, cfg, model=combined_gaus_LED_calib_delta):
     bound_high = [
         1e5,
         5.,
-        30.,
+        10.,
         1e4,
         80.,
         60.,
         1e2
     ]
+    
+    if model == combined_gaus_LED_calib_free:
+        bound_low = [
+        1e3, #a0
+        -5., #x00
+        1.,  #sigma0
+        1e2, #a1
+        20., #x01
+        10., #sigma1
+        1.,   #a2
+        60., #x02
+        15.  #sigma2
+        ]
+
+        bound_high = [
+            1e5,
+            5.,
+            50.,
+            1e4,
+            80.,
+            60.,
+            1e2,
+            100.,
+            20.
+        ]
+        
     
     popt_tot, pcov = curve_fit(model, xdata, ydata, bounds=(bound_low, bound_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
     perr_tot = np.sqrt(np.diag(pcov))

@@ -7,7 +7,7 @@ plt.style.use(legendstyles.LEGEND)
 plt.rcParams['xtick.labelsize']=20
 plt.rcParams['ytick.labelsize']=20
 import functions
-from fit_models import calib_fit_model, gaus_list, gaus_fixed, exp_list, comb_list_gaus_with_exp, combined_gaus_LED_calib_delta
+from fit_models import calib_fit_model, gaus_list, gaus_fixed, exp_list, comb_list_gaus_with_exp, combined_gaus_LED_calib_delta, combined_gaus_LED_calib_free
 
 def plot_calib_spectrum(centers, hist, popt_tot, perr_tot, filename, ylim=(1e1, 2e6)):
     fig = plt.figure(figsize=(10,6))
@@ -269,7 +269,10 @@ def plot_fitted_stacked_wvfs(traces_all, traces_ER, traces_alpha, popt_all, perr
     
     
     
-def plot_LED_calibration(centers, data_all, bins, _range, popt_tot, perr_tot, filename, ylim=(7e-1, 6e4)):
+def plot_LED_calibration(centers, data_all, bins, _range, popt_tot, perr_tot, filename, ylim=(7e-1, 6e4), fixed_delta=True):
+    if fixed_delta: model = combined_gaus_LED_calib_delta
+    else: model = combined_gaus_LED_calib_free
+    
     fig = plt.figure(figsize=(10,6))
     gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
     axs = gs.subplots(sharex=True, sharey=False)
@@ -281,23 +284,33 @@ def plot_LED_calibration(centers, data_all, bins, _range, popt_tot, perr_tot, fi
     axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
     axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
     
+    interval = (_range[1]-_range[0])/bins
+    peak_valley_ratios = []
+    
     for data, popt, perr in zip(data_all, popt_tot, perr_tot):
         hist = axs[0].hist(data, bins=bins, range=_range, histtype='step')
         patches = axs[0].patches
         color = patches[0].get_edgecolor()
-        axs[0].plot(centers, combined_gaus_LED_calib_delta(centers,*popt), '-', color=color, label=r'noise $\mu=$'+str('%.2f' % popt[1])+"$\pm$"+str('%.2f' % perr[1])+"  $\sigma=$"+str('%.2f' % popt[2])+"$\pm$"+str('%.2f' % perr[2])+'\n SPE $\mu=$'+str('%.2f' % (popt[1]+popt[4]))+"$\pm$"+str('%.2f' %np.sqrt(perr[1]**2.+perr[4]**2.))+"  $\sigma=$"+str('%.2f' % popt[5])+"$\pm$"+str('%.2f' % perr[5])+'\n DPE $\mu=$'+str('%.2f' % (popt[1]+2.*popt[4]))+"$\pm$"+str('%.2f' %np.sqrt(perr[1]**2.+(2.*perr[4])**2.))+"  $\sigma=$"+str('%.2f' % (np.sqrt(2.)*popt[5]))+"$\pm$"+str('%.2f' % (np.sqrt(2.)*perr[5])))
+        peak_valley_ratio = popt[3]/np.min(model(centers,*popt)[(int(popt[1]/interval-_range[0])):int((popt[1]+popt[4])/interval-_range[0])])
         
-        res = functions.residuals(hist[0], combined_gaus_LED_calib_delta(centers,*popt))
+        if fixed_delta:
+            axs[0].plot(centers, model(centers,*popt), '-', color=color, label=r'noise $\mu=$'+str('%.2f' % popt[1])+"$\pm$"+str('%.2f' % perr[1])+"  $\sigma=$"+str('%.2f' % popt[2])+"$\pm$"+str('%.2f' % perr[2])+'\n SPE $\mu=$'+str('%.2f' % (popt[1]+popt[4]))+"$\pm$"+str('%.2f' %np.sqrt(perr[1]**2.+perr[4]**2.))+"  $\sigma=$"+str('%.2f' % popt[5])+"$\pm$"+str('%.2f' % perr[5])+'\n DPE $\mu=$'+str('%.2f' % (popt[1]+2.*popt[4]))+"$\pm$"+str('%.2f' %np.sqrt(perr[1]**2.+(2.*perr[4])**2.))+"  $\sigma=$"+str('%.2f' % (np.sqrt(2.)*popt[5]))+"$\pm$"+str('%.2f' % (np.sqrt(2.)*perr[5])) + "\n peak/valley=" + str('%.2f' % peak_valley_ratio))
+        else:
+            axs[0].plot(centers, model(centers,*popt), '-', color=color, label=r'noise $\mu=$'+str('%.2f' % popt[1])+"$\pm$"+str('%.2f' % perr[1])+"  $\sigma=$"+str('%.2f' % popt[2])+"$\pm$"+str('%.2f' % perr[2])+'\n SPE $\mu=$'+str('%.2f' % popt[4])+"$\pm$"+str('%.2f' % perr[4])+"  $\sigma=$"+str('%.2f' % popt[5])+"$\pm$"+str('%.2f' % perr[5])+'\n DPE $\mu=$'+str('%.2f' % popt[7])+"$\pm$"+str('%.2f' % perr[7])+"  $\sigma=$"+str('%.2f' % popt[8])+"$\pm$"+str('%.2f' % perr[8]) + "\n peak/valley=" + str('%.2f' % peak_valley_ratio))
+        
+        res = functions.residuals(hist[0], model(centers,*popt))
         axs[1].scatter(centers, res, marker='.', linestyle='None', color=color)
         
-        chi2_red = functions.reduced_chi_square(hist[0], combined_gaus_LED_calib_delta(centers,*popt), centers, popt)
+        chi2_red = functions.reduced_chi_square(hist[0], model(centers,*popt), centers, popt)
         print("Fitting done, reduced chi2: " + str(chi2_red))
+        
+        peak_valley_ratios.append(peak_valley_ratio)
 
     
     axs[0].set_ylim(ylim)
     axs[0].set_yscale('log')
     
-    axs[0].set_ylabel('Counts/'+str((_range[1]-_range[0])/bins)+f'ADC$\cdot$ns', fontsize=19)
+    axs[0].set_ylabel('Counts/'+str('%.1f' % interval)+f'ADC$\cdot$ns', fontsize=19)
     axs[0].legend(fontsize=15, frameon=False, loc='upper right')
 
     axs[1].set_xlabel(f'Charge [ADC$\cdot$ns]', fontsize=19)
@@ -305,3 +318,5 @@ def plot_LED_calibration(centers, data_all, bins, _range, popt_tot, perr_tot, fi
     axs[1].xaxis.set_minor_locator(AutoMinorLocator())
 
     plt.savefig("plots/LED_calibration/"+filename, bbox_inches='tight')
+    
+    return peak_valley_ratios
