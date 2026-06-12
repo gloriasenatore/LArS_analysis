@@ -3,7 +3,7 @@
 from scipy.signal import find_peaks
 import numpy as np
 from scipy.optimize import curve_fit
-from fit_models import calib_fit_model, combined_gaus_with_exp, gaus, expp
+from fit_models import calib_fit_model, combined_gaus_with_exp, gaus, expp, combined_gaus_LED_calib_delta
 
 def small_pulses(df):
     areas = []
@@ -192,3 +192,32 @@ def fit_stacked_waveforms(ydata, cfg, sigma, model=expp, n_samples=800):
     perr = np.sqrt(np.diag(pcov))
     
     return popt, perr
+
+
+
+def fit_LED_calibration(xdata, ydata, cfg, model=combined_gaus_LED_calib_delta):
+    
+    bound_low = [
+        1e3, #a0
+        -5., #x00
+        5.,  #sigma0
+        1e2, #a1
+        20., #delta
+        10., #sigma1
+        1.   #a2
+    ]
+    
+    bound_high = [
+        1e5,
+        5.,
+        30.,
+        1e4,
+        80.,
+        60.,
+        1e2
+    ]
+    
+    popt_tot, pcov = curve_fit(model, xdata, ydata, bounds=(bound_low, bound_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    perr_tot = np.sqrt(np.diag(pcov))
+    
+    return popt_tot, perr_tot

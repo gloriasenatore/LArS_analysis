@@ -20,7 +20,7 @@ def expp(x,a,tau):
 
 def calib_fit_model(xvalues, a0,x00,sigma0, a1,x01,sigma1, a2,x02,sigma2, a3, a4, a5, ae,tau):
     '''
-        The model used for calibration is the combination of three gaussians (for pedestal, SPE and DPE) with all params free,
+        The model used for calibration with small pulses is the combination of three gaussians (for pedestal, SPE and DPE) with all params free,
         other three gaussians (for multiPE peaks till n. 5) and one exponential
     '''
     return [gaus(xx, a0, x00, sigma0)+gaus(xx, a1, x01, sigma1) + gaus(xx, a2,x02,sigma2) + gaus_fixed(xx, a3, x01, 3, sigma1) +
@@ -44,4 +44,14 @@ def combined_gaus_with_exp(x, a0,x00,sigma0, ae,tau):
 def comb_list_gaus_with_exp(xvalues, a0,x00,sigma0, ae,tau):
     return [gaus(xx, a0, x00, sigma0) +
             expp(xx, ae, tau)
+            for xx in xvalues]
+
+
+def combined_gaus_LED_calib_delta(xvalues, a0,x00,sigma0, a1,delta,sigma1, a2):
+    '''
+        This model used for calibration with LED is the combination of three gaussians (for pedestal, SPE and DPE), in which delta (distance
+        between mean value of pedestal and mean value of SPE) is fixed: muSPE = muNoise + delta, muDPE = muNoise + 2delta, 
+        sigmaDPE = sqrt(2)*sigmaSPE
+    '''
+    return [gaus(xx, a0, x00, sigma0) + gaus(xx, a1, delta+x00, sigma1) + gaus(xx, a2, 2.*delta+x00, np.sqrt(2.)*sigma1)
             for xx in xvalues]

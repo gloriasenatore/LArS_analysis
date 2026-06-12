@@ -69,8 +69,11 @@
     "upper_boundary_fit": 380
  },
  "LED_calibration": {
-    "lower_boundary_integration": 700,
-    "upper_boundary_integration": 715
+    "lower_boundary_integration": 100,
+    "upper_boundary_integration": 115,
+    "bins": 160,
+    "range_low": -30,
+    "range_up": 130
  }
  
 

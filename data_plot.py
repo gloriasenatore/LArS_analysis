@@ -7,7 +7,7 @@ plt.style.use(legendstyles.LEGEND)
 plt.rcParams['xtick.labelsize']=20
 plt.rcParams['ytick.labelsize']=20
 import functions
-from fit_models import calib_fit_model, gaus_list, gaus_fixed, exp_list, comb_list_gaus_with_exp
+from fit_models import calib_fit_model, gaus_list, gaus_fixed, exp_list, comb_list_gaus_with_exp, combined_gaus_LED_calib_delta
 
 def plot_calib_spectrum(centers, hist, popt_tot, perr_tot, filename, ylim=(1e1, 2e6)):
     fig = plt.figure(figsize=(10,6))
@@ -266,3 +266,42 @@ def plot_fitted_stacked_wvfs(traces_all, traces_ER, traces_alpha, popt_all, perr
     print("alpha fit done, reduced chi2: " + str(chi2_red_alpha))
     
     plt.savefig("plots/triplet_lifetime/"+filename, bbox_inches='tight')
+    
+    
+    
+def plot_LED_calibration(centers, data_all, bins, _range, popt_tot, perr_tot, filename, ylim=(7e-1, 6e4)):
+    fig = plt.figure(figsize=(10,6))
+    gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
+    axs = gs.subplots(sharex=True, sharey=False)
+    
+    axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
+    axs[1].fill_between(centers, y1= - 2, y2= -1, color='orange', alpha=.5)
+    axs[1].fill_between(centers, y1= 1, y2= 2, color='orange', alpha=.5)
+    axs[1].fill_between(centers, y1= - 3, y2= -2 , color='red', alpha=.5)
+    axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
+    axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    
+    for data, popt, perr in zip(data_all, popt_tot, perr_tot):
+        hist = axs[0].hist(data, bins=bins, range=_range, histtype='step')
+        patches = axs[0].patches
+        color = patches[0].get_edgecolor()
+        axs[0].plot(centers, combined_gaus_LED_calib_delta(centers,*popt), '-', color=color, label=r'noise $\mu=$'+str('%.2f' % popt[1])+"$\pm$"+str('%.2f' % perr[1])+"  $\sigma=$"+str('%.2f' % popt[2])+"$\pm$"+str('%.2f' % perr[2])+'\n SPE $\mu=$'+str('%.2f' % (popt[1]+popt[4]))+"$\pm$"+str('%.2f' %np.sqrt(perr[1]**2.+perr[4]**2.))+"  $\sigma=$"+str('%.2f' % popt[5])+"$\pm$"+str('%.2f' % perr[5])+'\n DPE $\mu=$'+str('%.2f' % (popt[1]+2.*popt[4]))+"$\pm$"+str('%.2f' %np.sqrt(perr[1]**2.+(2.*perr[4])**2.))+"  $\sigma=$"+str('%.2f' % (np.sqrt(2.)*popt[5]))+"$\pm$"+str('%.2f' % (np.sqrt(2.)*perr[5])))
+        
+        res = functions.residuals(hist[0], combined_gaus_LED_calib_delta(centers,*popt))
+        axs[1].scatter(centers, res, marker='.', linestyle='None', color=color)
+        
+        chi2_red = functions.reduced_chi_square(hist[0], combined_gaus_LED_calib_delta(centers,*popt), centers, popt)
+        print("Fitting done, reduced chi2: " + str(chi2_red))
+
+    
+    axs[0].set_ylim(ylim)
+    axs[0].set_yscale('log')
+    
+    axs[0].set_ylabel('Counts/'+str((_range[1]-_range[0])/bins)+f'ADC$\cdot$ns', fontsize=19)
+    axs[0].legend(fontsize=15, frameon=False, loc='upper right')
+
+    axs[1].set_xlabel(f'Charge [ADC$\cdot$ns]', fontsize=19)
+    axs[1].set_xlim(min(centers), max(centers))
+    axs[1].xaxis.set_minor_locator(AutoMinorLocator())
+
+    plt.savefig("plots/LED_calibration/"+filename, bbox_inches='tight')

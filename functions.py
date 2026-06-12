@@ -35,7 +35,7 @@ def reduced_chi_square(obs, model, centers, popt_tot, sigma=None):
     return chi2 / ndof
 
 
-def make_output_name(filepath, prefix="hist_calib", ext=".png"):
+def make_output_name(filepath, prefix="hist_calib", ext=".png", others=None):
     """
         Output is the name for the png file with the calibrated SPE
     """
@@ -47,7 +47,10 @@ def make_output_name(filepath, prefix="hist_calib", ext=".png"):
 
     run_tag = match.group(1)
 
-    return f"{prefix}_{run_tag}{ext}"
+    if others is None:
+        return f"{prefix}_{run_tag}{ext}"
+    else:
+        return f"{prefix}_{run_tag}_{others}{ext}"
 
 
 def sum_run_string(filenames):
@@ -93,7 +96,6 @@ def integrate_interval(df, cfg):
     lower_boundary = cfg["LED_calibration"]["lower_boundary_integration"]
     upper_boundary = cfg["LED_calibration"]["upper_boundary_integration"]
     max_boundary = len(df["Traces"][0])
-    print(max_boundary)
             
     sum_traces = np.array([ np.sum(trace[lower_boundary:min(upper_boundary, max_boundary)]) for trace in df["Traces"] ])
             
