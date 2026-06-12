@@ -4,10 +4,12 @@
   },
   "analysis": {
     "concatenate_files": false,
-    "if_calibrate": true,
+    "if_calibrate": false,
+    "using_LED_calib": true,
+    "file_LED_calib": "R8",
     "if_alpha_pre_PID": false,
     "if_alpha_post_PID": false,
-    "if_triplet_lifetime": false
+    "if_triplet_lifetime": true
   },
   "noise": {
     "width": 3.0,

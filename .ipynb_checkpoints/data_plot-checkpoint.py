@@ -148,7 +148,7 @@ def plot_Fprompt_fitted(centers, hist, hist_tot, bins, gaus_sum, popt_ER, popt_a
     
     axs[1].set_xlabel("Fprompt", fontsize=19)
     res_ER = functions.residuals(hist[0][int(popt_ER[1]*bins)-20:int(popt_ER[1]*bins)+20], gaus_sum[int(popt_ER[1]*bins)-fprompt_fit_min-20:int(popt_ER[1]*bins)-fprompt_fit_min+20])
-    res_alpha = functions.residuals(hist[0][int(popt_alpha[1]*bins)-20:int(popt_alpha[1]*bins)+20], gaus_sum[int(popt_alpha[1]*bins)-fprompt_fit_min-20:int(popt_alpha[1]*bins)-fprompt_fit_min+20])
+    res_alpha = functions.residuals(hist[0][int(popt_alpha[1]*bins)-15:int(popt_alpha[1]*bins)+15], gaus_sum[int(popt_alpha[1]*bins)-fprompt_fit_min-15:int(popt_alpha[1]*bins)-fprompt_fit_min+15])
     
     
     axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
@@ -158,7 +158,7 @@ def plot_Fprompt_fitted(centers, hist, hist_tot, bins, gaus_sum, popt_ER, popt_a
     axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
     axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
     axs[1].scatter(centers[int(popt_ER[1]*bins)-20:int(popt_ER[1]*bins)+20], res_ER, marker='.', linestyle='None', color='black')
-    axs[1].scatter(centers[int(popt_alpha[1]*bins)-20:int(popt_alpha[1]*bins)+20], res_alpha, marker='.', linestyle='None', color='black')
+    axs[1].scatter(centers[int(popt_alpha[1]*bins)-15:int(popt_alpha[1]*bins)+15], res_alpha, marker='.', linestyle='None', color='black')
     
     axs[1].set_xlim(0, 1)
     

@@ -81,8 +81,14 @@ def main():
             with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
                 f.write("SPE \t" + str(calib_popt_tot[4]) + "\t +- \t" + str(calib_perr_tot[4]) + "\n")
                 
-                
-        calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), obs="SPE", N=1)
+        
+        using_LED_calib = cfg["analysis"]["using_LED_calib"]
+        file_LED_calib = cfg["analysis"]["file_LED_calib"]
+        if using_LED_calib == False:
+            calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), obs="SPE", N=1)
+        else:
+            calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115", N=1)
+            
         bins= cfg["alpha"]["bins"]
         _range=(cfg["alpha"]["range_low"], cfg["alpha"]["range_high"])
                 
@@ -102,11 +108,18 @@ def main():
             interval = (_range[1]-_range[0])/bins
             alpha_popt_tot, alpha_perr_tot = data_calibration.fit_hist_alpha_bump(centers[int(cfg["alpha"]["fit_from"]/interval):], histo_alpha[0][int(cfg["alpha"]["fit_from"]/interval):], alpha_peak_PE, alpha_peak[2][0], cfg)
             print("Best fit params: " + str(alpha_popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(alpha_perr_tot, alpha_popt_tot)]))
-
-            data_plot.plot_alpha_spectrum(centers, histo_alpha[0], alpha_popt_tot, alpha_perr_tot, functions.make_output_name(name, prefix="light_yield_pre_PID", ext=".png"), ylim=(1, 1e4), interval=interval, filename_hist=functions.make_output_name(name, prefix="light_yield_pre_PID", ext=".txt"), save_to_file=cfg["alpha"]["save_to_file"])
             
-            with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
-                f.write("light_yield_pre_PID \t" + str(alpha_popt_tot[1]) + "\t +- \t" + str(alpha_perr_tot[1])  + "\n")
+            if using_LED_calib == False:
+                data_plot.plot_alpha_spectrum(centers, histo_alpha[0], alpha_popt_tot, alpha_perr_tot, functions.make_output_name(name, prefix="light_yield_pre_PID", ext=".png"), ylim=(1, 1e4), interval=interval, filename_hist=functions.make_output_name(name, prefix="light_yield_pre_PID", ext=".txt"), save_to_file=cfg["alpha"]["save_to_file"])
+            
+                with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
+                    f.write("light_yield_pre_PID \t" + str(alpha_popt_tot[1]) + "\t +- \t" + str(alpha_perr_tot[1])  + "\n")
+                    
+            else:
+                data_plot.plot_alpha_spectrum(centers, histo_alpha[0], alpha_popt_tot, alpha_perr_tot, functions.make_output_name(name, prefix="light_yield_pre_PID", ext=".png", others="LED_calib"), ylim=(1, 1e4), interval=interval, filename_hist=functions.make_output_name(name, prefix="light_yield_pre_PID", ext=".txt"), save_to_file=cfg["alpha"]["save_to_file"])
+            
+                with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
+                    f.write("light_yield_pre_PID_LED_calib \t" + str(alpha_popt_tot[1]) + "\t +- \t" + str(alpha_perr_tot[1])  + "\n")
                 
                 
         if_analyse_alpha_bump_post_PID = cfg["analysis"]["if_alpha_post_PID"]
@@ -161,22 +174,37 @@ def main():
             
             #data_plot.plot_Integral(alpha_evts, functions.make_output_name(name, prefix="hist_alpha_evts_Integral", ext=".png"), norm=calib_SPE, bins=bins, _range=_range)
             
-            data_plot.plot_alpha_spectrum_after_PID(centers, alpha_evts["Integral"]/calib_SPE, df["Integral"]/calib_SPE, bins, _range, alpha_popt_tot, alpha_perr_tot, functions.make_output_name(name, prefix="light_yield_post_PID", ext=".png"), ylim=(1, 8e5), interval=interval)
+            if using_LED_calib == False:
+                data_plot.plot_alpha_spectrum_after_PID(centers, alpha_evts["Integral"]/calib_SPE, df["Integral"]/calib_SPE, bins, _range, alpha_popt_tot, alpha_perr_tot, functions.make_output_name(name, prefix="light_yield_post_PID", ext=".png"), ylim=(1, 8e5), interval=interval)
             
-            with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
-                f.write("light_yield_post_PID \t" + str(alpha_popt_tot[1]) + "\t +- \t" + str(alpha_perr_tot[1])  + "\n")
+                with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
+                    f.write("light_yield_post_PID \t" + str(alpha_popt_tot[1]) + "\t +- \t" + str(alpha_perr_tot[1])  + "\n")
                 
-            if cfg["PID_analysis"]["save_alpha_evts_to_file"]:
-                with open("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt"), "x") as f:
-                    for event in alpha_evts["Evtnb"]:
-                        f.write(str(event)+"\n")
+                if cfg["PID_analysis"]["save_alpha_evts_to_file"]:
+                    with open("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt"), "x") as f:
+                        for event in alpha_evts["Evtnb"]:
+                            f.write(str(event)+"\n")
+                            
+            else:
+                data_plot.plot_alpha_spectrum_after_PID(centers, alpha_evts["Integral"]/calib_SPE, df["Integral"]/calib_SPE, bins, _range, alpha_popt_tot, alpha_perr_tot, functions.make_output_name(name, prefix="light_yield_post_PID", ext=".png", others="LED_calib"), ylim=(1, 8e5), interval=interval)
+            
+                with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
+                    f.write("light_yield_post_PID_LED_calib \t" + str(alpha_popt_tot[1]) + "\t +- \t" + str(alpha_perr_tot[1])  + "\n")
+                
+                if cfg["PID_analysis"]["save_alpha_evts_to_file"]:
+                    with open("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt", others="LED_calib"), "x") as f:
+                        for event in alpha_evts["Evtnb"]:
+                            f.write(str(event)+"\n")
                         
                         
         if_triplet_lifetime = cfg["analysis"]["if_triplet_lifetime"]
         
         if if_triplet_lifetime:
             print("\n ################################ \n Fitting stacked waveforms to find triplet lifetime")
-            evtnb = data_io.open_file("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt"))
+            if using_LED_calib == False:
+                evtnb = data_io.open_file("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt"))
+            else:
+                evtnb = data_io.open_file("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt", others="LED_calib"))
             df_PE_cut = df[(df["Integral"]/calib_SPE > cfg["PID_analysis"]["PE_cut"])]
             ER_evts = df_PE_cut.drop(evtnb)
             alpha_evts = df_PE_cut[df_PE_cut["Evtnb"].isin(evtnb)]
@@ -193,12 +221,21 @@ def main():
             print("Best fit params: ER: " + str(popt_ER) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_ER, popt_ER)]) + "\n")
             print("Best fit params: alpha: " + str(popt_alpha) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_alpha, popt_alpha)]) + "\n")
             
-            data_plot.plot_fitted_stacked_wvfs(tot_wvf, ER_wvf, alpha_wvf, popt_tot, perr_tot, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, functions.make_output_name(name, prefix="staked_wvfs_fitted", ext=".png"), n_samples=cfg["triplet_lifetime"]["n_samples"], xlims=(-50,cfg["triplet_lifetime"]["n_samples"]*10))
             
-            with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
-                f.write("triplet_lifetime_ER+alpha \t" + str(popt_tot[1]) + "\t +- \t" + str(perr_tot[1])  + "\n")
-                f.write("triplet_lifetime_ER \t" + str(popt_ER[1]) + "\t +- \t" + str(perr_ER[1])  + "\n")
-                f.write("triplet_lifetime_alpha \t" + str(popt_alpha[1]) + "\t +- \t" + str(perr_alpha[1])  + "\n")
+            if using_LED_calib == False:
+                data_plot.plot_fitted_stacked_wvfs(tot_wvf, ER_wvf, alpha_wvf, popt_tot, perr_tot, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, functions.make_output_name(name, prefix="staked_wvfs_fitted", ext=".png"), n_samples=cfg["triplet_lifetime"]["n_samples"], xlims=(-50,cfg["triplet_lifetime"]["n_samples"]*10))
+                
+                with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
+                    f.write("triplet_lifetime_ER+alpha \t" + str(popt_tot[1]) + "\t +- \t" + str(perr_tot[1])  + "\n")
+                    f.write("triplet_lifetime_ER \t" + str(popt_ER[1]) + "\t +- \t" + str(perr_ER[1])  + "\n")
+                    f.write("triplet_lifetime_alpha \t" + str(popt_alpha[1]) + "\t +- \t" + str(perr_alpha[1])  + "\n")
+            else:
+                data_plot.plot_fitted_stacked_wvfs(tot_wvf, ER_wvf, alpha_wvf, popt_tot, perr_tot, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, functions.make_output_name(name, prefix="staked_wvfs_fitted", ext=".png", others="LED_calib"), n_samples=cfg["triplet_lifetime"]["n_samples"], xlims=(-50,cfg["triplet_lifetime"]["n_samples"]*10))
+                
+                with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt", others="LED_calib"), "a") as f:
+                    f.write("triplet_lifetime_ER+alpha \t" + str(popt_tot[1]) + "\t +- \t" + str(perr_tot[1])  + "\n")
+                    f.write("triplet_lifetime_ER \t" + str(popt_ER[1]) + "\t +- \t" + str(perr_ER[1])  + "\n")
+                    f.write("triplet_lifetime_alpha \t" + str(popt_alpha[1]) + "\t +- \t" + str(perr_alpha[1])  + "\n")
             
 
 if __name__ == "__main__":
