@@ -53,8 +53,11 @@ def combined_gaus_LED_calib_delta(xvalues, a0,x00,sigma0, a1,delta,sigma1, a2):
         between mean value of pedestal and mean value of SPE) is fixed: muSPE = muNoise + delta, muDPE = muNoise + 2delta, 
         sigmaDPE = sqrt(2)*sigmaSPE
     '''
-    return [gaus(xx, a0, x00, sigma0) + gaus(xx, a1, delta+x00, sigma1) + gaus(xx, a2, 2.*delta+x00, np.sqrt(2.)*sigma1)
-            for xx in xvalues]
+    return (
+    gaus(xvalues, a0, x00, sigma0)
+    + gaus(xvalues, a1, x00 + delta, sigma1)
+    + gaus(xvalues, a2, x00 + 2*delta, np.sqrt(2.)*sigma1)
+    )
 
 def combined_gaus_LED_calib_free(xvalues, a0,x00,sigma0, a1,x01,sigma1, a2,x02,sigma2):
     '''

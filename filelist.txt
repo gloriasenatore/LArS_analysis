@@ -1,0 +1,9 @@
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R21_LED.root
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R22_LED.root
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R23_LED.root
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R24_LED.root
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R25_LED.root
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R26_LED.root
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R27_LED.root
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R28_LED.root
+../Light_yield_and_triplet_component/trees/black_test_cell/LED_calib/processed_wf1_R29_LED.root

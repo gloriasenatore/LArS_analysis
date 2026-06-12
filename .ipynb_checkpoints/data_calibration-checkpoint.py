@@ -195,16 +195,16 @@ def fit_stacked_waveforms(ydata, cfg, sigma, model=expp, n_samples=800):
 
 
 
-def fit_LED_calibration(xdata, ydata, cfg, model=combined_gaus_LED_calib_delta):
+def fit_LED_calibration(xdata, ydata, cfg, bins, _range, model=combined_gaus_LED_calib_delta):
     
     bound_low = [
         1e3, #a0
         -5., #x00
         1.,  #sigma0
-        1e2, #a1
+        1e1, #a1
         20., #delta
         10., #sigma1
-        1.   #a2
+        0.   #a2
     ]
     
     bound_high = [
@@ -214,7 +214,7 @@ def fit_LED_calibration(xdata, ydata, cfg, model=combined_gaus_LED_calib_delta):
         1e4,
         80.,
         60.,
-        1e2
+        3e2
     ]
     
     if model == combined_gaus_LED_calib_free:
@@ -246,4 +246,9 @@ def fit_LED_calibration(xdata, ydata, cfg, model=combined_gaus_LED_calib_delta):
     popt_tot, pcov = curve_fit(model, xdata, ydata, bounds=(bound_low, bound_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
     perr_tot = np.sqrt(np.diag(pcov))
     
-    return popt_tot, perr_tot
+    interval = (_range[1]-_range[0]) / bins
+    
+    #peak_valley_ratio = np.popt_tot[3]/np.min(model(xdata,*popt_tot)[(int(popt_tot[1]/interval-_range[0])):int((popt_tot[1]+popt_tot[4])/interval-_range[0])]) #this is evaluated on the model
+    peak_valley_ratio = np.max(ydata[int((popt_tot[1]+popt_tot[4])/interval-_range[0]-5):int((popt_tot[1]+popt_tot[4])/interval-_range[0]+5)])/np.min(ydata[(int(popt_tot[1]/interval-_range[0])):int((popt_tot[1]+popt_tot[4])/interval-_range[0])]) #this is evaluated on the data histogram
+    
+    return popt_tot, perr_tot, peak_valley_ratio

@@ -58,7 +58,7 @@ def sum_run_string(filenames):
 
     for filename in filenames:
         basename = os.path.basename(filename)
-        match = re.search(r'(R\d+)\.root$', basename)
+        match = re.search(r'(R\d+)', basename)
 
         if match:
             runs.append(match.group(1))
@@ -95,8 +95,7 @@ def integrate_interval(df, cfg):
     
     lower_boundary = cfg["LED_calibration"]["lower_boundary_integration"]
     upper_boundary = cfg["LED_calibration"]["upper_boundary_integration"]
-    max_boundary = len(df["Traces"][0])
             
-    sum_traces = np.array([ np.sum(trace[lower_boundary:min(upper_boundary, max_boundary)]) for trace in df["Traces"] ])
+    sum_traces = np.array([ np.sum(trace[lower_boundary:upper_boundary]) for trace in df["Traces"] ])
             
     return sum_traces
