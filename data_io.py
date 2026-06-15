@@ -2,6 +2,7 @@
 
 import uproot
 import pandas as pd
+from datetime import datetime
 
 def open_file(filename):
     my_file = open(filename, "r")
@@ -34,12 +35,23 @@ def import_tree(path, store_traces=False):
     return df
 
 
-def read_from_file(file_name, obs="SPE", N=1):   
+def read_from_file(file_name, obs="SPE", return_error=False):   
+    last_value = None
+    last_error = None
+    time_to_return = None
+
     with open(file_name, "r") as f:
         for line in f:
-            field = line.split()
-            if field[0] == obs:
-                var = float(field[N])
-                break
-            
-    return var
+            if line.startswith(obs):
+                parts = line.split()
+                last_value = float(parts[1])
+                if return_error==True: last_error = float(parts[3])
+                
+            if line.startswith("time "):
+                timestamp = line[len("time "):].strip()
+                time_to_return = datetime.strptime(timestamp, "%Y-%m-%d %H:%M")
+
+
+    if return_error==True: return last_value, last_error, time_to_return
+    else: return last_value
+

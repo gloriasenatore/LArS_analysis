@@ -5,6 +5,7 @@ import numpy as np
 import os
 import re
 import pandas as pd
+import data_io
 
 def make_histo(data, bins, _range):
     histo = plt.hist(data, bins=bins, range=_range)
@@ -99,3 +100,47 @@ def integrate_interval(df, cfg, entry="LED_calibration"):
     sum_traces = np.array([ np.sum(trace[lower_boundary:upper_boundary]) for trace in df["Traces"] ])
             
     return sum_traces
+
+
+def get_values_from_folder(folder, obs="SPE", filelist=None, include_LED_high=True):
+    if filelist is None and include_LED_high=="only": pattern = re.compile(r"^obs_(R\d+_LED_high)\.txt$")
+    elif filelist is None and include_LED_high: pattern = re.compile(r"^obs_(R\d+(?:_LED_high)?)\.txt$")
+    elif filelist is None and include_LED_high==False: pattern = re.compile(r"^obs_(R\d+)\.txt$")
+    
+    else:
+        if isinstance(filelist, str) and filelist.endswith(".txt"):
+            with open(filelist, "r") as f:
+                filelist = [line.strip() for line in f if line.strip()]
+                
+        escaped = [re.escape(name) for name in filelist]
+        pattern_str = r"^obs_(" + "|".join(escaped) + r")\.txt$"
+        pattern = re.compile(pattern_str)
+
+    values = {}
+    time = {}
+
+    for filename in os.listdir(folder):
+        match = pattern.match(filename)
+
+        if match:
+            key = match.group(1)
+            filepath = os.path.join(folder, filename)
+            
+            values[key] = data_io.read_from_file(filepath, obs, return_error=True)
+
+    return values
+
+
+
+def sort_items(values):
+    sorted_items = sorted(
+        values.items(),
+        key=lambda kv: kv[1][2]
+    )
+    
+    keys = [k for k, v in sorted_items]
+    measurements = [v[0] for k, v in sorted_items]
+    errs = [v[1] for k, v in sorted_items]
+    times = [v[2] for k, v in sorted_items]
+    
+    return keys, measurements, errs, times

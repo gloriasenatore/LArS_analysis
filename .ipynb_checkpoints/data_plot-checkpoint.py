@@ -8,6 +8,7 @@ plt.rcParams['xtick.labelsize']=20
 plt.rcParams['ytick.labelsize']=20
 import functions
 from fit_models import calib_fit_model, gaus_list, gaus_fixed, exp_list, comb_list_gaus_with_exp, combined_gaus_LED_calib_delta, combined_gaus_LED_calib_free
+from datetime import datetime
 
 def plot_calib_spectrum(centers, hist, popt_tot, perr_tot, filename, ylim=(1e1, 2e6)):
     fig = plt.figure(figsize=(10,6))
@@ -367,3 +368,135 @@ def plot_visible_light_spectrum(centers, hist, popt_tot, perr_tot, filename, fil
                     j=j+1
 
                 f.write("\n")
+                
+                
+def plot_together_obs(values, filename, with_time=True, obs="SPE", additional_dataset=None):
+    fig = plt.figure(figsize=(10,6))
+    ax1 = fig.add_subplot(111)
+    
+    sorted_items = sorted(
+        values.items(),
+        key=lambda kv: kv[1][2]
+    )
+    
+    keys = [k for k, v in sorted_items]
+    measurements = [v[0] for k, v in sorted_items]
+    errs = [v[1] for k, v in sorted_items]
+    times = [v[2] for k, v in sorted_items]
+    
+
+    x = range(len(keys))
+    
+    weights = np.array([1 / err**2 for err in errs])
+    weighted_mean = np.sum(weights * measurements) / np.sum(weights)
+    std_dev = np.std(measurements, ddof=1)
+    weighted_error = np.sqrt(1 / np.sum(weights))
+    print("std dev: " + str(std_dev) + "  weighted error: " + str(weighted_error))
+    
+    ax1.axhline(weighted_mean, color='blue', linewidth=.5, label = 'Mean', lw=2)
+    
+    if additional_dataset is not None:
+        weights = np.array([1 / err**2 for err in additional_dataset[1]])
+        weighted_mean = np.sum(weights * additional_dataset[0]) / np.sum(weights)
+        std_dev_2 = np.std(additional_dataset[0], ddof=1)
+        ax1.axhline(weighted_mean, color='violet', linewidth=.5, label = 'Mean post PID', lw=2)
+        
+        std_dev = ( std_dev**2. + std_dev_2**2. )**0.5
+    
+    
+    ax1.fill_between(x, y1 = weighted_mean - std_dev, y2 = weighted_mean + std_dev, color='green', alpha=.3, label=r'1$\sigma$')
+    ax1.fill_between(x, y1 = weighted_mean - 2.*std_dev, y2 = weighted_mean - std_dev, color='orange', alpha=.3, label=r'2$\sigma$')
+    ax1.fill_between(x, y1 = weighted_mean + std_dev, y2 = weighted_mean + 2.*std_dev, color='orange', alpha=.3)
+    ax1.fill_between(x, y1 = weighted_mean - 3.*std_dev, y2 = weighted_mean - 2.*std_dev, color='red', alpha=.3, label=r'3$\sigma$')
+    ax1.fill_between(x, y1 = weighted_mean + 2.*std_dev, y2 = weighted_mean + 3.*std_dev, color='red', alpha=.3)
+
+    if additional_dataset is None:
+        ax1.errorbar(x, measurements, yerr=errs, fmt='o', color='black')
+    else:
+        ax1.errorbar(x, measurements, yerr=errs, fmt='o', color='black', label="pre PID")
+        ax1.errorbar(x, additional_dataset[0], yerr=additional_dataset[1], fmt='o', color='brown', label="post PID")
+        
+        
+    ax1.legend(fontsize=14)
+    plt.grid()
+    
+    ax1.set_xticks(x, values.keys(), rotation=30)
+    ax1.set_xlabel("Measurement name", fontsize=19)
+    if obs == "SPE": ax1.set_ylabel(f"SPE Area [ADC$\cdot$ns]", fontsize=19)
+    if obs == "light_yield": ax1.set_ylabel(f"Light yield [PE]", fontsize=19)
+    if obs == "triplet_lifetime": ax1.set_ylabel(f"Triplet lifetime [ns]", fontsize=19)
+    ax1.yaxis.set_minor_locator(AutoMinorLocator())
+
+    if with_time:
+        ax2 = ax1.twiny()
+        ax2.set_xlim(ax1.get_xlim())
+        ax2.set_xticks(x, times, rotation=30, fontsize=12)
+        ax2.set_xlabel(r"Time", fontsize=16)
+
+    plt.savefig("plots/putting_results_together/"+filename, bbox_inches='tight')
+    
+    return measurements, errs
+
+
+
+def plot_together_triplet_lifetime(values_ER_alpha, values_ER, values_alpha, filename, with_time=True):
+    fig = plt.figure(figsize=(10,6))
+    ax1 = fig.add_subplot(111)
+    
+    ER_alpha = functions.sort_items(values_ER_alpha)
+    ER = functions.sort_items(values_ER)
+    alpha = functions.sort_items(values_alpha)
+    
+
+    x = range(len(ER_alpha[0]))
+    
+    weights = np.array([1 / err**2 for err in ER_alpha[2]])
+    weighted_mean = np.sum(weights * ER_alpha[1]) / np.sum(weights)
+    std_dev = np.std(ER_alpha[1], ddof=1)
+    weighted_error = np.sqrt(1 / np.sum(weights))
+    print("std dev: " + str(std_dev) + "  weighted error: " + str(weighted_error))
+    
+    ax1.axhline(weighted_mean, color='blue', linewidth=.5, label = 'Mean ER+alpha', lw=2)
+    
+    ax1.fill_between(x, y1 = weighted_mean - std_dev, y2 = weighted_mean + std_dev, color='green', alpha=.3, label=r'1$\sigma$')
+    ax1.fill_between(x, y1 = weighted_mean - 2.*std_dev, y2 = weighted_mean - std_dev, color='orange', alpha=.3, label=r'2$\sigma$')
+    ax1.fill_between(x, y1 = weighted_mean + std_dev, y2 = weighted_mean + 2.*std_dev, color='orange', alpha=.3)
+    ax1.fill_between(x, y1 = weighted_mean - 3.*std_dev, y2 = weighted_mean - 2.*std_dev, color='red', alpha=.3, label=r'3$\sigma$')
+    ax1.fill_between(x, y1 = weighted_mean + 2.*std_dev, y2 = weighted_mean + 3.*std_dev, color='red', alpha=.3)
+    
+    weights = np.array([1 / err**2 for err in ER[2]])
+    weighted_mean = np.sum(weights * ER[1]) / np.sum(weights)
+    std_dev = np.std(ER[1], ddof=1)
+    weighted_error = np.sqrt(1 / np.sum(weights))
+    print("std dev: " + str(std_dev) + "  weighted error: " + str(weighted_error))
+    
+    ax1.axhline(weighted_mean, color='violet', linewidth=.5, label = 'Mean ER', lw=2)
+    
+    weights = np.array([1 / err**2 for err in alpha[2]])
+    weighted_mean = np.sum(weights * alpha[1]) / np.sum(weights)
+    std_dev = np.std(alpha[1], ddof=1)
+    weighted_error = np.sqrt(1 / np.sum(weights))
+    print("std dev: " + str(std_dev) + "  weighted error: " + str(weighted_error))
+    
+    #ax1.axhline(weighted_mean, color='purple', linewidth=.5, label = 'Mean alpha', lw=2)
+
+    ax1.errorbar(x, ER_alpha[1], yerr=ER_alpha[2], fmt='o', color='black', label="ER+alpha")
+    ax1.errorbar(x, ER[1], yerr=ER[2], fmt='o', color='brown', label="ER")
+    #ax1.errorbar(x, alpha[1], yerr=alpha[2], fmt='o', color='grey', label="alpha")
+        
+        
+    ax1.legend(fontsize=14)
+    plt.grid()
+    
+    ax1.set_xticks(x, ER_alpha[0], rotation=30)
+    ax1.set_xlabel("Measurement name", fontsize=19)
+    ax1.set_ylabel(f"Triplet lifetime [ns]", fontsize=19)
+    ax1.yaxis.set_minor_locator(AutoMinorLocator())
+
+    if with_time:
+        ax2 = ax1.twiny()
+        ax2.set_xlim(ax1.get_xlim())
+        ax2.set_xticks(x, ER_alpha[3], rotation=30, fontsize=12)
+        ax2.set_xlabel(r"Time", fontsize=16)
+
+    plt.savefig("plots/putting_results_together/"+filename, bbox_inches='tight')
