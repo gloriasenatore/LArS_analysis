@@ -3,18 +3,18 @@
     "store_traces": false
   },
   "analysis": {
-    "concatenate_files": false,
+    "concatenate_files": true,
     "if_calibrate": false,
-    "using_LED_calib": true,
+    "using_LED_calib": false,
     "file_LED_calib": "R8",
     "if_alpha_pre_PID": false,
     "if_alpha_post_PID": false,
-    "if_triplet_lifetime": true
+    "if_triplet_lifetime": false
   },
   "noise": {
     "width": 3.0,
     "width_frac": 0.3,
-    "bound_frac_height": 0.1
+    "bound_frac_height": 0.2
   },
   "spe": {
     "width": 11.0,
@@ -22,7 +22,7 @@
     "bound_frac_height": 0.1
   },
   "dpe": {
-    "height_bounds_low": 800,
+    "height_bounds_low": 100,
     "height_bounds_high": 5000
   },
   "multi_pe": {
@@ -76,6 +76,16 @@
     "bins": 160,
     "range_low": -30,
     "range_up": 130
+ },
+ "LED_high": {
+    "bins": 180,
+    "range_low": 0,
+    "range_high": 150,
+    "bound_frac_height": 0.2,
+    "bound_frac_peak": 0.2,
+    "width_low": 5,
+    "width_high": 60,
+    "save_to_file": false
  }
  
 

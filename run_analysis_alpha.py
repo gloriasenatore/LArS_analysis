@@ -1,4 +1,4 @@
-## Program for LArS PMT post-processed waveforms calibration and light-yield estimation.
+## Program for LArS PMT post-processed waveforms calibration and VUV-light-yield estimation.
 ## Gloria Senatore (University of Zurich)
 
 import matplotlib.pyplot as plt

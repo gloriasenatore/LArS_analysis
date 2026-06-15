@@ -313,3 +313,57 @@ def plot_LED_calibration(centers, data_all, bins, _range, popt_tot, perr_tot, fi
     axs[1].xaxis.set_minor_locator(AutoMinorLocator())
 
     plt.savefig("plots/LED_calibration/"+filename, bbox_inches='tight')
+    
+    
+    
+def plot_visible_light_spectrum(centers, hist, popt_tot, perr_tot, filename, filename_hist, ylim=(7e-1, 6e5), interval=5, save_to_file=False):
+    fig = plt.figure(figsize=(10,6))
+    gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
+    axs = gs.subplots(sharex=True, sharey=False)
+    axs[0].scatter(centers, hist, color='black', s=20, label="data")
+    axs[0].set_ylim(ylim)
+    
+    mini=int((popt_tot[1]-10)/interval)
+    maxi=int((popt_tot[1]+10)/interval)
+    
+    axs[0].plot(centers[mini:maxi],gaus_list(centers[mini:maxi],popt_tot[0],popt_tot[1],popt_tot[2]),'-', color='red', label=r'visible light peak fit' +"\n"+ '$\mu=$('+str('%.2f' % popt_tot[1])+"$\pm$"+str('%.2f' %perr_tot[1])+") PE" +"\n"+  "$\sigma=$("+str('%.2f' % popt_tot[2])+"$\pm$"+str('%.2f' % perr_tot[2])+") PE")
+    axs[0].set_yscale('log')
+    axs[1].xaxis.set_minor_locator(AutoMinorLocator())
+    axs[0].set_ylabel('Counts/'+str('%.2f' %interval)+'PE', fontsize=19)
+    axs[0].legend(fontsize=15, frameon=False, loc='upper right')
+
+    axs[1].set_xlabel('Waveform Area [PE]', fontsize=19)
+    
+    res = functions.residuals(hist[mini:maxi], gaus_list(centers[mini:maxi],*popt_tot))
+     
+    axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
+    axs[1].fill_between(centers, y1= - 2, y2= -1, color='orange', alpha=.5)
+    axs[1].fill_between(centers, y1= 1, y2= 2, color='orange', alpha=.5)
+    axs[1].fill_between(centers, y1= - 3, y2= -2 , color='red', alpha=.5)
+    axs[1].fill_between(centers, y1= 2, y2= 3, color='red', alpha=.5)
+    axs[1].set_ylabel(r'Pulls [$\sigma$]', fontsize=19)
+    axs[1].scatter(centers[mini:maxi], res, marker='.', linestyle='None', color='black')
+    
+    axs[1].set_xlim(0, max(centers)) #min(centers)
+
+    chi2_red = functions.reduced_chi_square(hist[mini:maxi], gaus_list(centers[mini:maxi],*popt_tot), centers, popt_tot)
+    print("Fitting done, reduced chi2: " + str(chi2_red))
+    if chi2_red < 4.:
+        plt.savefig("plots/light_yield_visible/"+filename, bbox_inches='tight')
+    else:
+        print("WARNING: not very good fit, saved in bad")
+        plt.savefig("plots/light_yield_visible/bad/"+filename, bbox_inches='tight')
+        
+    if save_to_file:
+        gaus_fit = gaus_list(centers[mini:maxi],popt_tot[0],popt_tot[1],popt_tot[2])
+        with open("plots/light_yield_visible/"+filename_hist,"x") as f:
+            j=0
+            for i in range(len(hist)):
+                f.write(str(centers[i])+"\t"+str(hist[i])+"\t"+str(popt_tot[1])+
+                        "\t"+str(perr_tot[1])+"\t"+str(popt_tot[2])+
+                        "\t"+str(perr_tot[2]))
+                if(i >= mini and i < maxi):
+                    f.write("\t"+str(gaus_fit[j])+"\t"+str(res[j])+"\t"+str(mini)+"\t"+str(maxi))
+                    j=j+1
+
+                f.write("\n")

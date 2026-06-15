@@ -82,7 +82,7 @@ def fit_hist(xdata, ydata, peaks_guess, heights_guess, cfg):
         1e4,
         1e4,
 
-        1.2e4,
+        5e4, #1.2e4
         cfg["exp"]["tau_high"]
     ]
     
@@ -252,3 +252,24 @@ def fit_LED_calibration(xdata, ydata, cfg, bins, _range, model=combined_gaus_LED
     peak_valley_ratio = np.max(ydata[int((popt_tot[1]+popt_tot[4])/interval-_range[0]-5):int((popt_tot[1]+popt_tot[4])/interval-_range[0]+5)])/np.min(ydata[(int(popt_tot[1]/interval-_range[0])):int((popt_tot[1]+popt_tot[4])/interval-_range[0])]) #this is evaluated on the data histogram
     
     return popt_tot, perr_tot, peak_valley_ratio
+
+
+
+def fit_hist_visible_light_bump(xdata, ydata, peak_guess, height_guess, cfg, model=gaus):
+    
+    bound_low = [
+        height_guess * (1 - cfg["LED_high"]["bound_frac_height"]),
+        peak_guess * (1 - cfg["LED_high"]["bound_frac_peak"]),
+        cfg["LED_high"]["width_low"]
+    ]
+    
+    bound_high = [
+        height_guess * (1 + cfg["LED_high"]["bound_frac_height"]),
+        peak_guess * (1 + cfg["LED_high"]["bound_frac_peak"]),
+        cfg["LED_high"]["width_high"]
+    ]
+    
+    popt_tot, pcov = curve_fit(model, xdata, ydata, bounds=(bound_low, bound_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    perr_tot = np.sqrt(np.diag(pcov))
+    
+    return popt_tot, perr_tot
