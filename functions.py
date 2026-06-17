@@ -102,10 +102,11 @@ def integrate_interval(df, cfg, entry="LED_calibration"):
     return sum_traces
 
 
-def get_values_from_folder(folder, obs="SPE", filelist=None, include_LED_high=True):
-    if filelist is None and include_LED_high=="only": pattern = re.compile(r"^obs_(R\d+_LED_high)\.txt$")
-    elif filelist is None and include_LED_high: pattern = re.compile(r"^obs_(R\d+(?:_LED_high)?)\.txt$")
-    elif filelist is None and include_LED_high==False: pattern = re.compile(r"^obs_(R\d+)\.txt$")
+def get_values_from_folder(folder, obs="SPE", filelist=None, include_LED_high=True, discard_bad_fits=False):
+    base = r"R\d+(?:\+R\d+)*"
+    if filelist is None and include_LED_high=="only": pattern = re.compile(rf"^obs_({base}+_LED_high)\.txt$")
+    elif filelist is None and include_LED_high: pattern = re.compile(rf"^obs_({base}+(?:_LED_high)?)\.txt$")
+    elif filelist is None and include_LED_high==False: pattern = re.compile(rf"^obs_({base})\.txt$")
     
     else:
         if isinstance(filelist, str) and filelist.endswith(".txt"):
@@ -126,9 +127,20 @@ def get_values_from_folder(folder, obs="SPE", filelist=None, include_LED_high=Tr
             key = match.group(1)
             filepath = os.path.join(folder, filename)
             
-            values[key] = data_io.read_from_file(filepath, obs, return_error=True)
+            if discard_bad_fits:
+                #png_name = os.path.splitext(filename)[0] + ".png"
+                bad_png = os.path.join(folder, "../../plots/calibration/bad", f"hist_calib_{key}.png")
 
-    return values
+                # se esiste nella cartella bad, salta questo file
+                if os.path.exists(bad_png):
+                    print(f"Skipping {filename}: found bad plot ({bad_png})")
+                    continue
+            
+            values[key] = data_io.read_from_file(filepath, obs, return_error=True)
+            
+    sorted_items = dict(sorted(values.items(), key=lambda kv: kv[1][2]))
+
+    return sorted_items
 
 
 

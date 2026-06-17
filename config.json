@@ -1,29 +1,33 @@
 {
   "import_tree": {
-    "store_traces": false
+    "store_traces": true
   },
   "analysis": {
     "concatenate_files": true,
-    "if_calibrate": false,
+    "if_calibrate": true,
     "using_LED_calib": false,
-    "file_LED_calib": "R8",
-    "if_alpha_pre_PID": false,
-    "if_alpha_post_PID": false,
-    "if_triplet_lifetime": false
+    "file_LED_calib": "R37",
+    "if_alpha_pre_PID": true,
+    "if_alpha_post_PID": true,
+    "if_triplet_lifetime": true
+  },
+  "dark_counts_calib": {
+    "lower_boundary": -5,
+    "upper_boundary": 10
   },
   "noise": {
-    "width": 3.0,
-    "width_frac": 0.3,
+    "width": 5.0,
+    "width_frac": 0.8,
     "bound_frac_height": 0.2
   },
   "spe": {
     "width": 11.0,
-    "width_frac": 0.2,
-    "bound_frac_height": 0.1
+    "width_frac": 0.5,
+    "bound_frac_height": 0.2
   },
   "dpe": {
-    "height_bounds_low": 100,
-    "height_bounds_high": 5000
+    "height_bounds_low": 50,
+    "height_bounds_high": 5e5
   },
   "multi_pe": {
     "a3": 900,
@@ -32,7 +36,7 @@
   },
   "exp": {
     "tau_low": 8,
-    "tau_high": 300,
+    "tau_high": 1000,
     "ae_guess": 9000
   },
   "fit": {
@@ -48,9 +52,9 @@
     "exp_tau_low": 0.0,
     "exp_tau_high": 1000.0,
     "exp_a_high": 4000.0,
-    "bins": 180,
+    "bins": 220,
     "range_low": 0,
-    "range_high": 900,
+    "range_high": 1100,
     "save_to_file": false
  },
  "PID_analysis": {
@@ -85,7 +89,7 @@
     "bound_frac_peak": 0.2,
     "width_low": 5,
     "width_high": 60,
-    "save_to_file": false
+    "save_to_file": true
  }
  
 

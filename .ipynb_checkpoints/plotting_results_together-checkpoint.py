@@ -28,21 +28,24 @@ def main():
     
     with open("config.json", "r") as f:
         cfg = json.load(f)
-    
+        
     print("\n Plotting small pulses calibration plot")
-    SPE_small_pulses = functions.get_values_from_folder("observables/black_test_cell", obs="SPE")
+    SPE_small_pulses = functions.get_values_from_folder("observables/black_test_cell", obs="SPE", discard_bad_fits=True)
     print(SPE_small_pulses)
     data_plot.plot_together_obs(SPE_small_pulses, filename="black_test_cell_calib_small_pulses.png", with_time=True)
+    
     
     print("\n Plotting LED calibration plot")
     LED_calib = functions.get_values_from_folder("observables/black_test_cell", obs="SPE_100_115", filelist="observables/black_test_cell/valid_LED_calib_filelist.txt")
     print(LED_calib)
     data_plot.plot_together_obs(LED_calib, filename="black_test_cell_calib_LED.png", with_time=True)
     
+    
     if_put_together_small_pulses_and_LED_calib = True
     if if_put_together_small_pulses_and_LED_calib:
         calib_values = {**SPE_small_pulses, **LED_calib}
-        data_plot.plot_together_obs(calib_values, filename="black_test_cell_calib_all_together.png", with_time=True)
+        sorted_calib_items = dict(sorted(calib_values.items(), key=lambda kv: kv[1][2]))
+        data_plot.plot_together_obs(sorted_calib_items, filename="black_test_cell_calib_all_together.png", with_time=True)
         
     print("\n Plotting VUV light-yield")
     light_yield_pre_PID = functions.get_values_from_folder("observables/black_test_cell", obs="light_yield_pre_PID", include_LED_high=False)

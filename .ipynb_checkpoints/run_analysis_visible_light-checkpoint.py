@@ -62,8 +62,9 @@ def main():
         
         if if_calibrate:
         
-            areas = data_calibration.small_pulses(df)
-            histo_areas = functions.make_histo(areas, bins=200, _range=(0,200))
+            #areas = data_calibration.small_pulses(df)
+            areas = data_calibration.small_pulses_fixed_window_method(df, cfg)
+            histo_areas = functions.make_histo(areas, bins=100, _range=(0,100))
 
             ## Obtain a rough estimation of the peak positions (pedestal and SPE):
             print("Initial estimation of peak position")
@@ -86,9 +87,11 @@ def main():
         using_LED_calib = cfg["analysis"]["using_LED_calib"]
         file_LED_calib = cfg["analysis"]["file_LED_calib"]
         if using_LED_calib == False:
-            calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt", others="LED_high"), obs="SPE", N=1)
+            calib_SPE = data_io.read_from_file("observables/black_test_cell/"+functions.make_output_name(name, prefix="obs", ext=".txt", others="LED_high"), obs="SPE")
         else:
-            calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115", N=1)
+            calib_SPE = data_io.read_from_file("observables/black_test_cell/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115")
+            
+        print("\n The spectrum will we rescaled for " + str(calib_SPE))
             
         bins= cfg["LED_high"]["bins"]
         _range=(cfg["LED_high"]["range_low"], cfg["LED_high"]["range_high"])

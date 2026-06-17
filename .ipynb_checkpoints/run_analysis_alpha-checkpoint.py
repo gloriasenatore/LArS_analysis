@@ -61,8 +61,9 @@ def main():
         
         if if_calibrate:
         
-            areas = data_calibration.small_pulses(df)
-            histo_areas = functions.make_histo(areas, bins=200, _range=(0,200))
+            #areas = data_calibration.small_pulses(df, cfg)
+            areas = data_calibration.small_pulses_fixed_window_method(df, cfg)
+            histo_areas = functions.make_histo(areas, bins=100, _range=(0,100))
 
             ## Obtain a rough estimation of the peak positions (pedestal and SPE):
             print("Initial estimation of peak position")
@@ -85,9 +86,11 @@ def main():
         using_LED_calib = cfg["analysis"]["using_LED_calib"]
         file_LED_calib = cfg["analysis"]["file_LED_calib"]
         if using_LED_calib == False:
-            calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), obs="SPE", N=1)
+            calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), obs="SPE")
         else:
-            calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115", N=1)
+            calib_SPE = data_io.read_from_file("observables/black_test_cell/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115")
+            
+        print("\n The spectrum will we rescaled for " + str(calib_SPE))
             
         bins= cfg["alpha"]["bins"]
         _range=(cfg["alpha"]["range_low"], cfg["alpha"]["range_high"])
@@ -100,7 +103,7 @@ def main():
             histo_alpha = functions.make_histo(df["Integral"]/calib_SPE, bins=bins, _range=_range)
             centers = (histo_alpha[1][:-1] + histo_alpha[1][1:]) / 2
             #histo_alpha_smooth = gaussian_filter1d(histo_alpha[0], sigma=2) # Smooth the spectrum and ease the peak finding
-            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e3), prominence=20)
+            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e6), prominence=20)
             alpha_peak_PE = alpha_peak[0][0]*(_range[1]-_range[0])/bins+_range[0]
 
             print("\n ################################ \n Fitting histogram to find light-yield")
@@ -163,7 +166,7 @@ def main():
             bins= cfg["alpha"]["bins"]
             histo_alpha = functions.make_histo(alpha_evts["Integral"]/calib_SPE, bins=bins, _range=_range)
             centers = (histo_alpha[1][:-1] + histo_alpha[1][1:]) / 2
-            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e3), prominence=20)
+            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e6), prominence=20)
             alpha_peak_PE = alpha_peak[0][0]*(_range[1]-_range[0])/bins+_range[0]
 
             print("\n ################################ \n Fitting histogram to find light-yield")
@@ -232,7 +235,7 @@ def main():
             else:
                 data_plot.plot_fitted_stacked_wvfs(tot_wvf, ER_wvf, alpha_wvf, popt_tot, perr_tot, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, functions.make_output_name(name, prefix="staked_wvfs_fitted", ext=".png", others="LED_calib"), n_samples=cfg["triplet_lifetime"]["n_samples"], xlims=(-50,cfg["triplet_lifetime"]["n_samples"]*10))
                 
-                with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt", others="LED_calib"), "a") as f:
+                with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
                     f.write("triplet_lifetime_ER+alpha \t" + str(popt_tot[1]) + "\t +- \t" + str(perr_tot[1])  + "\n")
                     f.write("triplet_lifetime_ER \t" + str(popt_ER[1]) + "\t +- \t" + str(perr_ER[1])  + "\n")
                     f.write("triplet_lifetime_alpha \t" + str(popt_alpha[1]) + "\t +- \t" + str(perr_alpha[1])  + "\n")

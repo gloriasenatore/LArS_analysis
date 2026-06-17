@@ -19,10 +19,13 @@ def import_tree(path, store_traces=False):
     RMS = tree["T1"]["RMS"].array(library="np")
     area = tree["T1"]["Area"].array(library="np")
     leftedge = tree["T1"]["Leftedge"].array(library="np")
+    rightedge = tree["T1"]["Rightedge"].array(library="np")
     height = tree["T1"]["Height"].array(library="np")
+    position = tree["T1"]["Position"].array(library="np")
+    width = tree["T1"]["Width"].array(library="np")
     prompts = tree["T1"]["Prompt"].array(library="np")
     events = tree["T1"]["Evtnb"].array(library="np")
-    d = {"Integral":integral, "RMS":RMS, "Peaks_area":area, "Height":height, "Leftedge": leftedge, "Prompt": prompts, "Evtnb":events}
+    d = {"Integral":integral, "RMS":RMS, "Peaks_area":area, "Height":height, "Leftedge": leftedge, "Rightedge": rightedge, "Prompt": prompts, "Evtnb":events, "Position": position, "Width":width}
     
     if store_traces:
         traces = tree["T1"]["Trace"].array(library="np") #Reading and storing the all pulses need some time

@@ -3,7 +3,7 @@
 from scipy.signal import find_peaks
 import numpy as np
 from scipy.optimize import curve_fit
-from fit_models import calib_fit_model, combined_gaus_with_exp, gaus, expp, combined_gaus_LED_calib_delta, combined_gaus_LED_calib_free
+from fit_models import calib_fit_model, combined_gaus_with_exp, gaus, expp, combined_gaus_LED_calib_delta, combined_gaus_LED_calib_free, calib_fit_model_fixed, calib_fit_model_easy
 
 def small_pulses(df):
     areas = []
@@ -12,6 +12,25 @@ def small_pulses(df):
             if(peak < 600): areas.append(peak)
     
     return areas
+
+def small_pulses_fixed_window_method(df, cfg): 
+    
+    lower_boundary = cfg["dark_counts_calib"]["lower_boundary"] ##I integrate wvf in 15 samples around the max peak: same integration window used for LED calibration
+    upper_boundary = cfg["dark_counts_calib"]["upper_boundary"]
+    
+    charges = []
+
+    for trace, peaks in zip(df["Traces"], df["Position"]):
+
+        for peak_idx in peaks:
+
+            start = int(peak_idx + lower_boundary)
+            stop = int(peak_idx + upper_boundary)
+
+            if start >= 0 and stop < len(trace):
+                charges.append(np.sum(trace[start:stop]))
+
+    return np.asarray(charges)
     
             
 def peak_position(counts,height=0,prominence=20):
@@ -23,7 +42,7 @@ def peak_position(counts,height=0,prominence=20):
         height=height
     )
     
-    idx = np.argsort(props["prominences"])[::-1]
+    idx = np.argsort(props["peak_heights"])[::-1]
     peaks = peaks[idx]
     widths = props["widths"][idx]
     heights = props["peak_heights"][idx]
@@ -54,12 +73,12 @@ def fit_hist(xdata, ydata, peaks_guess, heights_guess, cfg):
         SPE_width_guess  * (1 - cfg["spe"]["width_frac"]),
 
         cfg["dpe"]["height_bounds_low"],
-        2 * SPE_peak_guess * 0.9,
-        np.sqrt(2) * SPE_width_guess * 0.9,
+        #2 * SPE_peak_guess * 0.98,
+        #np.sqrt(2) * SPE_width_guess * 0.9,
 
-        0,
-        0,
-        0,
+        #0,
+        #0,
+        #0,
 
         0,
         cfg["exp"]["tau_low"]
@@ -75,18 +94,24 @@ def fit_hist(xdata, ydata, peaks_guess, heights_guess, cfg):
         SPE_width_guess  * (1 + cfg["spe"]["width_frac"]),
 
         cfg["dpe"]["height_bounds_high"],
-        2 * SPE_peak_guess * 1.1,
-        np.sqrt(2) * SPE_width_guess * 1.1,
+        #2 * SPE_peak_guess * 1.02,
+        #np.sqrt(2) * SPE_width_guess * 1.1,
 
-        1e4,
-        1e4,
-        1e4,
+        #1e4,
+        #1e4,
+        #1e4,
 
-        5e4, #1.2e4
+        5e5, #1.2e4
         cfg["exp"]["tau_high"]
     ]
     
-    popt_tot, pcov = curve_fit(calib_fit_model, xdata, ydata, bounds=(bounds_low, bounds_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    #popt_tot, pcov = curve_fit(calib_fit_model, xdata, ydata, bounds=(bounds_low, bounds_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    #perr_tot = np.sqrt(np.diag(pcov))
+    
+    #popt_tot, pcov = curve_fit(calib_fit_model_fixed, xdata, ydata, bounds=(bounds_low, bounds_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
+    #perr_tot = np.sqrt(np.diag(pcov))
+    
+    popt_tot, pcov = curve_fit(calib_fit_model_easy, xdata, ydata, bounds=(bounds_low, bounds_high), sigma=np.sqrt(np.maximum(ydata,1)), absolute_sigma=True, maxfev=cfg["fit"]["maxfev"])
     perr_tot = np.sqrt(np.diag(pcov))
 
     return popt_tot, perr_tot
@@ -188,7 +213,7 @@ def fit_stacked_waveforms(ydata, cfg, sigma, model=expp, n_samples=800):
     lower_boundary = cfg["triplet_lifetime"]["lower_boundary_fit"]
     upper_boundary = cfg["triplet_lifetime"]["upper_boundary_fit"]
     
-    popt, pcov = curve_fit(expp, samples[lower_boundary:upper_boundary], ydata[lower_boundary:upper_boundary], bounds=[[0.1,500],[1000, 4000]], absolute_sigma=True, maxfev=cfg["fit"]["maxfev"]) #sigma= sigma[lower_boundary:upper_boundary]
+    popt, pcov = curve_fit(expp, samples[lower_boundary:upper_boundary], ydata[lower_boundary:upper_boundary], bounds=[[0.1,500],[1e4, 4000]], absolute_sigma=True, maxfev=cfg["fit"]["maxfev"]) #sigma= sigma[lower_boundary:upper_boundary]
     perr = np.sqrt(np.diag(pcov))
     
     return popt, perr
