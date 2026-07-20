@@ -40,7 +40,7 @@ def main():
         
     print("\n Number of files: " + str(len(args.filenames)))
     
-    dfs = [data_io.import_tree(filename, store_traces=True) for filename in args.filenames]
+    dfs = [data_io.import_tree(filename, store_traces=True, to_evt=int(3e5)) for filename in args.filenames]
     
     popts = []
     perrs = []

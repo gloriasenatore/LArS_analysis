@@ -12,29 +12,35 @@ def open_file(filename):
     return data
 
 
-def import_tree(path, store_traces=False):
+def import_tree(path, store_traces=False, from_evt=None, to_evt=None):
     tree = uproot.open(path)
-
-    integral = tree["T1"]["IntegralWave"].array(library="np")
-    RMS = tree["T1"]["RMS"].array(library="np")
-    area = tree["T1"]["Area"].array(library="np")
-    leftedge = tree["T1"]["Leftedge"].array(library="np")
-    rightedge = tree["T1"]["Rightedge"].array(library="np")
-    height = tree["T1"]["Height"].array(library="np")
-    position = tree["T1"]["Position"].array(library="np")
-    width = tree["T1"]["Width"].array(library="np")
-    prompts = tree["T1"]["Prompt"].array(library="np")
-    events = tree["T1"]["Evtnb"].array(library="np")
-    d = {"Integral":integral, "RMS":RMS, "Peaks_area":area, "Height":height, "Leftedge": leftedge, "Rightedge": rightedge, "Prompt": prompts, "Evtnb":events, "Position": position, "Width":width}
+    
+    branches = tree["T1"].arrays(
+        ["IntegralWave", "RMS", "Area", "Leftedge",
+         "Rightedge", "Height", "Position",
+         "Width", "Prompt", "Evtnb"],
+        library="np", entry_start=from_evt, entry_stop=to_evt
+    )
+    
+    mask = branches["RMS"] < 3
+    
+    d = {
+        "Integral": branches["IntegralWave"][mask], "RMS": branches["RMS"][mask], "Peaks_area": branches["Area"][mask], "Height":branches["Height"][mask], "Leftedge": branches["Leftedge"][mask], "Rightedge": branches["Rightedge"][mask], "Prompt": branches["Prompt"][mask], "Evtnb":branches["Evtnb"][mask], "Position": branches["Position"][mask], "Width":branches["Width"][mask]
+    }
+    print("Root read")
     
     if store_traces:
-        traces = tree["T1"]["Trace"].array(library="np") #Reading and storing the all pulses need some time
-        d["Traces"] = traces
+        traces = tree["T1"]["Trace"].array(library="np", entry_start=from_evt, entry_stop=to_evt) #Reading and storing the all pulses need some time
+        d["Traces"] = traces[mask]
+        print("Traces stored")
         
-    df_1 = pd.DataFrame(d)
-    print("Total waveforms number " + str(len(df_1)))
-    df = df_1[(df_1["RMS"] < 3)] #quality cut applied to remove noisy events
-    print("Waveforms number after quality cut: " + str(len(df)) + " (" + str(len(df)/len(df_1)*100.) + "%)")
+    df = pd.DataFrame(d)
+    #print("Total waveforms number " + str(len(df)))
+    #initial_len = len(df)
+    #df = df[(df["RMS"] < 3)] #quality cut applied to remove noisy events
+    #print("Waveforms number after quality cut: " + str(len(df)) + " (" + str(len(df)/initial_len*100.) + "%)")
+    print("Dataframe created")
+    
     return df
 
 

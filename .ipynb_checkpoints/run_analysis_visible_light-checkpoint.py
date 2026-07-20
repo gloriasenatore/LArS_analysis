@@ -37,7 +37,7 @@ def main():
     with open("config.json", "r") as f:
         cfg = json.load(f)
         
-    print("\n ################################################################### \n LArS PMT post-processed waveform analysis for visible-light-yield estimation program - Gloria Senatore UZH \n ################################################################### \n")
+    print("\n ########################################################################################################## \n LArS PMT post-processed waveform analysis for visible-light-yield estimation program - Gloria Senatore UZH \n ########################################################################################################## \n")
         
     print("\n Number of files: " + str(len(args.filenames)))
     
@@ -64,7 +64,7 @@ def main():
         
             #areas = data_calibration.small_pulses(df)
             areas = data_calibration.small_pulses_fixed_window_method(df, cfg)
-            histo_areas = functions.make_histo(areas, bins=100, _range=(0,100))
+            histo_areas = functions.make_histo(areas, bins=150, _range=(0,150))
 
             ## Obtain a rough estimation of the peak positions (pedestal and SPE):
             print("Initial estimation of peak position")
@@ -87,9 +87,10 @@ def main():
         using_LED_calib = cfg["analysis"]["using_LED_calib"]
         file_LED_calib = cfg["analysis"]["file_LED_calib"]
         if using_LED_calib == False:
-            calib_SPE = data_io.read_from_file("observables/black_test_cell/"+functions.make_output_name(name, prefix="obs", ext=".txt", others="LED_high"), obs="SPE")
+            calib_SPE = data_io.read_from_file("observables/PEN_cylinder_acrylic/"+functions.make_output_name(name, prefix="obs", ext=".txt", others="LED_high"), obs="SPE")
         else:
-            calib_SPE = data_io.read_from_file("observables/black_test_cell/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115")
+            calib_SPE = data_io.read_from_file("observables/black_metal_velvet/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115")
+            #calib_SPE = data_io.read_from_file("observables/PEN_cylinder/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_high"), obs="SPE")
             
         print("\n The spectrum will we rescaled for " + str(calib_SPE))
             
@@ -99,6 +100,11 @@ def main():
         
         histo_integral = functions.make_histo(df["Integral"]/calib_SPE, bins=bins, _range=_range)
         centers = (histo_integral[1][:-1] + histo_integral[1][1:]) / 2
+        fig = plt.figure(figsize=(10,6))
+        plt.hist(df["Integral"]/calib_SPE, bins=100, range=(0,100), label="data")
+        #plt.yscale("log")
+        plt.xlabel("Waveform area [PE]")
+        plt.savefig("plots/light_yield_visible/no_light.png", bbox_inches='tight')
         #histo_integral_smooth = gaussian_filter1d(histo_integral[0], sigma=2) # Smooth the spectrum and ease the peak finding
         integral_peak = data_calibration.peak_position(histo_integral[0], height=(0,5e5), prominence=20)
         integral_peak_PE = integral_peak[0][0]*(_range[1]-_range[0])/bins+_range[0]
@@ -107,7 +113,7 @@ def main():
         print("Guess peak at " + str(integral_peak_PE) + " PE, with heights " +str(integral_peak[2][0]) +" counts")
         interval = (_range[1]-_range[0])/bins
         
-        integral_popt_tot, integral_perr_tot = data_calibration.fit_hist_visible_light_bump(centers[int((integral_peak_PE-10.)/interval):int((integral_peak_PE+10.)/interval)], histo_integral[0][int((integral_peak_PE-10.)/interval):int((integral_peak_PE+10.)/interval)], integral_peak_PE, integral_peak[2][0], cfg)
+        integral_popt_tot, integral_perr_tot = data_calibration.fit_hist_visible_light_bump(centers[int((integral_peak_PE-20.)/interval):int((integral_peak_PE+20.)/interval)], histo_integral[0][int((integral_peak_PE-20.)/interval):int((integral_peak_PE+20.)/interval)], integral_peak_PE, integral_peak[2][0], cfg)
         print("Best fit params: " + str(integral_popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(integral_perr_tot, integral_popt_tot)]))
         
         if using_LED_calib == False:

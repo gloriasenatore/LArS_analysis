@@ -72,12 +72,13 @@ def sum_run_string(filenames):
 def stack_waveforms(df, n_samples=800):
     sum_traces = np.zeros(shape=(n_samples))
     wvfs_bin = np.full((len(df), n_samples), np.nan)
+    norm = len(df)
 
     for row_idx, event in enumerate(df["Evtnb"]):
         lefte = df["Leftedge"].loc[event][0]
         trace = np.asarray(df["Traces"].loc[event])
-        norm = np.max(df["Peaks_area"].loc[event])
-
+        #norm = np.max(df["Peaks_area"].loc[event]) #Normalization with max peak of each event
+        
         aligned = trace[lefte:] / norm
         
         L = len(aligned)

@@ -42,12 +42,12 @@ def main():
     
     if cfg["analysis"]["concatenate_files"]:
         name = functions.sum_run_string(args.filenames)
-        dfs = pd.concat([data_io.import_tree(filename, store_traces=cfg["import_tree"]["store_traces"]) for filename in args.filenames], axis=0, ignore_index=True)
+        dfs = pd.concat([data_io.import_tree(filename, store_traces=cfg["import_tree"]["store_traces"], from_evt=0, to_evt=None) for filename in args.filenames], axis=0, ignore_index=True)
         dfs["Evtnb"] = dfs.index.to_list()
         print("\n Total number of waveforms to analyze: " + str(len(dfs)))
         dfs = [dfs]
     else:
-        dfs = [data_io.import_tree(filename, store_traces=cfg["import_tree"]["store_traces"]) for filename in args.filenames]
+        dfs = [data_io.import_tree(filename, store_traces=cfg["import_tree"]["store_traces"], from_evt=0, to_evt=None) for filename in args.filenames]
     
     
     for df, filename in zip(dfs, args.filenames):
@@ -63,7 +63,7 @@ def main():
         
             #areas = data_calibration.small_pulses(df, cfg)
             areas = data_calibration.small_pulses_fixed_window_method(df, cfg)
-            histo_areas = functions.make_histo(areas, bins=100, _range=(0,100))
+            histo_areas = functions.make_histo(areas, bins=140, _range=(0,140))
 
             ## Obtain a rough estimation of the peak positions (pedestal and SPE):
             print("Initial estimation of peak position")
@@ -86,9 +86,11 @@ def main():
         using_LED_calib = cfg["analysis"]["using_LED_calib"]
         file_LED_calib = cfg["analysis"]["file_LED_calib"]
         if using_LED_calib == False:
-            calib_SPE = data_io.read_from_file("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), obs="SPE")
+            calib_SPE = data_io.read_from_file("observables/PEN_cylinder_acrylic/"+functions.make_output_name(name, prefix="obs", ext=".txt"), obs="SPE")
         else:
-            calib_SPE = data_io.read_from_file("observables/black_test_cell/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115")
+            #calib_SPE = data_io.read_from_file("observables/PEN_cylinder/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE_100_115")
+            
+            calib_SPE = data_io.read_from_file("observables/black_test_cell_acrylic/"+functions.make_output_name(file_LED_calib, prefix="obs", ext=".txt", others="LED_calib"), obs="SPE")
             
         print("\n The spectrum will we rescaled for " + str(calib_SPE))
             
@@ -102,17 +104,23 @@ def main():
             ## Fitting the alpha bump to obtain light-yield
             histo_alpha = functions.make_histo(df["Integral"]/calib_SPE, bins=bins, _range=_range)
             centers = (histo_alpha[1][:-1] + histo_alpha[1][1:]) / 2
+            fig = plt.figure(figsize=(10,6))
+            plt.hist(df["Integral"]/calib_SPE, bins=200, range=(0,900), label="data")
+            plt.yscale("log")
+            plt.xlabel("Waveform area [PE]")
+            plt.savefig("plots/light_yield_before_PID/spectrum.png", bbox_inches='tight')
             #histo_alpha_smooth = gaussian_filter1d(histo_alpha[0], sigma=2) # Smooth the spectrum and ease the peak finding
-            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e6), prominence=20)
+            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e6), prominence=5)
             alpha_peak_PE = alpha_peak[0][0]*(_range[1]-_range[0])/bins+_range[0]
 
             print("\n ################################ \n Fitting histogram to find light-yield")
             print("Guess peak at " + str(alpha_peak_PE) + " PE, with heights " +str(alpha_peak[2][0]) +" counts")
             interval = (_range[1]-_range[0])/bins
-            alpha_popt_tot, alpha_perr_tot = data_calibration.fit_hist_alpha_bump(centers[int(cfg["alpha"]["fit_from"]/interval):], histo_alpha[0][int(cfg["alpha"]["fit_from"]/interval):], alpha_peak_PE, alpha_peak[2][0], cfg)
+            alpha_popt_tot, alpha_perr_tot = data_calibration.fit_hist_alpha_bump(centers[int(alpha_peak_PE/interval-10):int(alpha_peak_PE/interval+10)], histo_alpha[0][int(alpha_peak_PE/interval-10):int(alpha_peak_PE/interval+10)], alpha_peak_PE, alpha_peak[2][0], cfg)
             print("Best fit params: " + str(alpha_popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(alpha_perr_tot, alpha_popt_tot)]))
             
             if using_LED_calib == False:
+                
                 data_plot.plot_alpha_spectrum(centers, histo_alpha[0], alpha_popt_tot, alpha_perr_tot, functions.make_output_name(name, prefix="light_yield_pre_PID", ext=".png"), ylim=(1, 1e4), interval=interval, filename_hist=functions.make_output_name(name, prefix="light_yield_pre_PID", ext=".txt"), save_to_file=cfg["alpha"]["save_to_file"])
             
                 with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
@@ -126,21 +134,24 @@ def main():
                 
                 
         if_analyse_alpha_bump_post_PID = cfg["analysis"]["if_alpha_post_PID"]
+        directory_to_consider = cfg["plotting_together"]["directory"]
         
         if if_analyse_alpha_bump_post_PID:
             print("\n ################################ \n Performing Particle Identification analysis")
             data_plot.plot_hist2d_Integral_Fprompt(df["Integral"]/calib_SPE, df["Prompt"], _range, functions.make_output_name(name, prefix="hist2d_Integral_Fprompt", ext=".png"))
             df_PE_cut = df[(df["Integral"]/calib_SPE > cfg["PID_analysis"]["PE_cut"])]
+            data_plot.plot_Fprompt(df_PE_cut, functions.make_output_name(name, prefix="hist_Fprompt", ext=".png"))
             
             bins = cfg["PID_analysis"]["prompt_bins"]
             ## Fitting the fraction of prompt light spectrum to obtain the PID cut
             histo_prompt = functions.make_histo(df_PE_cut["Prompt"], bins=bins, _range=(0, 1))
             centers = (histo_prompt[1][:-1] + histo_prompt[1][1:]) / 2
-            guess_peaks = data_calibration.peak_position(histo_prompt[0], height=0, prominence=20)
+            '''
+            guess_peaks = data_calibration.peak_position(histo_prompt[0], height=0, prominence=5)
             guess_peaks_pos = [x*1./bins for x in guess_peaks[0]]
             print("Guess peak at " + str(guess_peaks_pos) + " Fprompt, with heights " +str(guess_peaks[2]) +" counts")
             
-            #data_plot.plot_Fprompt(df_PE_cut, functions.make_output_name(name, prefix="hist_Fprompt", ext=".png"))
+            
             
             popt_ER, perr_ER, popt_alpha, perr_alpha = data_calibration.fit_fprompt(centers, histo_prompt[0], guess_peaks_pos, guess_peaks[2], cfg, interval=1./bins)
             print("Best fit params: ER:" + str(popt_ER) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(perr_ER, popt_ER)]) + "\n")
@@ -151,28 +162,31 @@ def main():
             gaus_sum = np.array(fit_models.gaus_list(centers[fprompt_fit_min:fprompt_fit_max], popt_ER[0], popt_ER[1], popt_ER[2])) + np.array(fit_models.gaus_list(centers[fprompt_fit_min:fprompt_fit_max], popt_alpha[0], popt_alpha[1], popt_alpha[2]))
             
             PID_cut = (np.argmin(gaus_sum)+fprompt_fit_min)/bins
+            '''
+            PID_cut = 0.70 #For dataset black test cell with acrylic window
             print("PID cut at Fprompt " + str(PID_cut))
             alpha_evts = df_PE_cut[df_PE_cut["Prompt"] >= PID_cut]
             ER_evts = df_PE_cut[df_PE_cut["Prompt"] < PID_cut]
             
             print("Alpha events / tot events before energy cut: " + str(len(alpha_evts)/len(df)*100.) + "%")
             print("Alpha events / tot events after energy cut: " + str(len(alpha_evts)/len(df_PE_cut)*100.) + "%")
-            
+            '''
             data_plot.plot_Fprompt_fitted(centers, df_PE_cut, df, bins, gaus_sum, popt_ER, popt_alpha, functions.make_output_name(name, prefix="hist_Fprompt_fitted", ext=".png"), fprompt_fit_min=fprompt_fit_min, fprompt_fit_max=fprompt_fit_max, cut=PID_cut, ylims=(1, 3e5))
             
             
             ## Fitting the alpha bump to obtain light-yield
             #histo_alpha_smooth = gaussian_filter1d(histo_alpha[0], sigma=2) # Smooth the spectrum and ease the peak finding
+            '''
             bins= cfg["alpha"]["bins"]
             histo_alpha = functions.make_histo(alpha_evts["Integral"]/calib_SPE, bins=bins, _range=_range)
             centers = (histo_alpha[1][:-1] + histo_alpha[1][1:]) / 2
-            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,1e6), prominence=20)
+            alpha_peak = data_calibration.peak_position(histo_alpha[0], height=(0,3e2), prominence=2)
             alpha_peak_PE = alpha_peak[0][0]*(_range[1]-_range[0])/bins+_range[0]
-
+            
             print("\n ################################ \n Fitting histogram to find light-yield")
             print("Guess peak at " + str(alpha_peak_PE) + " PE, with heights " +str(alpha_peak[2][0]) +" counts")
             interval = (_range[1]-_range[0])/bins
-            alpha_popt_tot, alpha_perr_tot = data_calibration.fit_hist_alpha_bump(centers[int(cfg["alpha"]["fit_from"]/interval):], histo_alpha[0][int(cfg["alpha"]["fit_from"]/interval):], alpha_peak_PE, alpha_peak[2][0], cfg, model=fit_models.gaus)
+            alpha_popt_tot, alpha_perr_tot = data_calibration.fit_hist_alpha_bump(centers[int(alpha_peak_PE/interval-5):int(alpha_peak_PE/interval+5)], histo_alpha[0][int(alpha_peak_PE/interval-5):int(alpha_peak_PE/interval+5)], alpha_peak_PE, alpha_peak[2][0], cfg, model=fit_models.gaus)
             print("Best fit params alpha bump:" + str(alpha_popt_tot) + "\n Relative errors %: " + str([err / parm * 100 for err, parm in zip(alpha_perr_tot, alpha_popt_tot)]) + "\n")
             
             #data_plot.plot_Integral(alpha_evts, functions.make_output_name(name, prefix="hist_alpha_evts_Integral", ext=".png"), norm=calib_SPE, bins=bins, _range=_range)
@@ -195,7 +209,7 @@ def main():
                     f.write("light_yield_post_PID_LED_calib \t" + str(alpha_popt_tot[1]) + "\t +- \t" + str(alpha_perr_tot[1])  + "\n")
                 
                 if cfg["PID_analysis"]["save_alpha_evts_to_file"]:
-                    with open("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt", others="LED_calib"), "x") as f:
+                    with open("observables/selected_alpha_events/"+directory_to_consider+functions.make_output_name(name, prefix="alpha_events", ext=".txt", others="LED_calib"), "x") as f:
                         for event in alpha_evts["Evtnb"]:
                             f.write(str(event)+"\n")
                         
@@ -204,13 +218,17 @@ def main():
         
         if if_triplet_lifetime:
             print("\n ################################ \n Fitting stacked waveforms to find triplet lifetime")
+            '''
             if using_LED_calib == False:
-                evtnb = data_io.open_file("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt"))
+                evtnb = data_io.open_file("observables/selected_alpha_events/"+directory_to_consider+functions.make_output_name(name, prefix="alpha_events", ext=".txt"))
             else:
-                evtnb = data_io.open_file("observables/selected_alpha_events/"+functions.make_output_name(name, prefix="alpha_events", ext=".txt", others="LED_calib"))
+                evtnb = data_io.open_file("observables/selected_alpha_events/"+directory_to_consider+functions.make_output_name(name, prefix="alpha_events", ext=".txt", others="LED_calib"))
+            '''
             df_PE_cut = df[(df["Integral"]/calib_SPE > cfg["PID_analysis"]["PE_cut"])]
-            ER_evts = df_PE_cut.drop(evtnb)
-            alpha_evts = df_PE_cut[df_PE_cut["Evtnb"].isin(evtnb)]
+            #ER_evts = df_PE_cut.drop(evtnb)
+            ER_evts = df_PE_cut[(df_PE_cut["Prompt"] < 0.5) & (df_PE_cut["Prompt"] > 0.3)] #only for black test cell acrylic dataset
+            #alpha_evts = df_PE_cut[df_PE_cut["Evtnb"].isin(evtnb)]
+            alpha_evts = df_PE_cut[df_PE_cut["Prompt"] > 0.7] #only for black test cell acrylic dataset
             
             alpha_wvf = functions.stack_waveforms(alpha_evts, n_samples=cfg["triplet_lifetime"]["n_samples"])
             ER_wvf = functions.stack_waveforms(ER_evts, n_samples=cfg["triplet_lifetime"]["n_samples"])
@@ -233,12 +251,13 @@ def main():
                     f.write("triplet_lifetime_ER \t" + str(popt_ER[1]) + "\t +- \t" + str(perr_ER[1])  + "\n")
                     f.write("triplet_lifetime_alpha \t" + str(popt_alpha[1]) + "\t +- \t" + str(perr_alpha[1])  + "\n")
             else:
-                data_plot.plot_fitted_stacked_wvfs(tot_wvf, ER_wvf, alpha_wvf, popt_tot, perr_tot, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, functions.make_output_name(name, prefix="staked_wvfs_fitted", ext=".png", others="LED_calib"), n_samples=cfg["triplet_lifetime"]["n_samples"], xlims=(-50,cfg["triplet_lifetime"]["n_samples"]*10))
+                data_plot.plot_fitted_stacked_wvfs(tot_wvf, ER_wvf, alpha_wvf, popt_tot, perr_tot, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, functions.make_output_name(name, prefix="staked_wvfs_fitted", ext=".png", others="LED_calib"), n_samples=cfg["triplet_lifetime"]["n_samples"], xlims=(-50,cfg["triplet_lifetime"]["n_samples"]*10), filename_txt=functions.make_output_name(name, prefix="staked_wvfs_fitted", ext=".txt", others="LED_calib"))
                 
                 with open("observables/"+functions.make_output_name(name, prefix="obs", ext=".txt"), "a") as f:
                     f.write("triplet_lifetime_ER+alpha \t" + str(popt_tot[1]) + "\t +- \t" + str(perr_tot[1])  + "\n")
                     f.write("triplet_lifetime_ER \t" + str(popt_ER[1]) + "\t +- \t" + str(perr_ER[1])  + "\n")
                     f.write("triplet_lifetime_alpha \t" + str(popt_alpha[1]) + "\t +- \t" + str(perr_alpha[1])  + "\n")
+                
             
 
 if __name__ == "__main__":

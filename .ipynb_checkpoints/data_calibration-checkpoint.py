@@ -183,9 +183,9 @@ def fit_fprompt(xdata, ydata, peaks_guess, heights_guess, cfg, interval = 0.005)
     perr_ER = np.sqrt(np.diag(pcov))
     
     fit_interval_alpha_low = int(peak_alpha * (1 - cfg["PID_analysis"]["fit_interval_frac"])/interval)
-    fit_interval_alpha_high = np.minimum(1, int(peak_alpha * (1 + cfg["PID_analysis"]["fit_interval_frac"])))
+    fit_interval_alpha_high = np.minimum(1, int(peak_alpha * (1 + cfg["PID_analysis"]["fit_interval_frac"])/interval))
     if fit_interval_alpha_high == 1: fit_interval_alpha_high = -1
-    else: fit_interval_alpha_high = fit_interval_alpha_high/interval
+    #else: fit_interval_alpha_high = int(fit_interval_alpha_high/interval)
     
     bound_low = [
         height_alpha * (1 - cfg["PID_analysis"]["bound_frac_height"]),

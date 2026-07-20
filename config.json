@@ -4,11 +4,11 @@
   },
   "analysis": {
     "concatenate_files": true,
-    "if_calibrate": true,
-    "using_LED_calib": false,
-    "file_LED_calib": "R37",
-    "if_alpha_pre_PID": true,
-    "if_alpha_post_PID": true,
+    "if_calibrate": false,
+    "using_LED_calib": true,
+    "file_LED_calib": "R810",
+    "if_alpha_pre_PID": false,
+    "if_alpha_post_PID": false,
     "if_triplet_lifetime": true
   },
   "dark_counts_calib": {
@@ -26,7 +26,7 @@
     "bound_frac_height": 0.2
   },
   "dpe": {
-    "height_bounds_low": 50,
+    "height_bounds_low": 20,
     "height_bounds_high": 5e5
   },
   "multi_pe": {
@@ -46,31 +46,31 @@
     "fit_from": 300,
     "bound_frac_height": 0.2,
     "bound_frac_peak": 0.2,
-    "width_low": 30.0,
-    "width_high": 60.0,
+    "width_low": 10.0,
+    "width_high": 120.0,
     "exp_a_low": 0.0,
     "exp_tau_low": 0.0,
     "exp_tau_high": 1000.0,
     "exp_a_high": 4000.0,
-    "bins": 220,
+    "bins": 150,
     "range_low": 0,
-    "range_high": 1100,
-    "save_to_file": false
+    "range_high": 800,
+    "save_to_file": true
  },
  "PID_analysis": {
-    "PE_cut": 200,
+    "PE_cut": 100,
     "prompt_bins": 200,
     "fprompt_fit_min": 0.2,
     "fprompt_fit_max": 0.9,
     "bound_frac_height": 0.2,
-    "bound_frac_peak": 0.2,
+    "bound_frac_peak": 0.1,
     "width_low": 0.02,
     "width_high": 0.5,
     "fit_interval_frac": 0.3,
     "save_alpha_evts_to_file": true 
  },
  "triplet_lifetime": {
-    "n_samples": 800,
+    "n_samples": 1500,
     "lower_boundary_fit": 80,
     "upper_boundary_fit": 380
  },
@@ -82,15 +82,17 @@
     "range_up": 130
  },
  "LED_high": {
-    "bins": 180,
+    "bins": 400,
     "range_low": 0,
-    "range_high": 150,
+    "range_high": 100,
     "bound_frac_height": 0.2,
     "bound_frac_peak": 0.2,
-    "width_low": 5,
+    "width_low": 2,
     "width_high": 60,
-    "save_to_file": true
+    "save_to_file": false
+ },
+ "plotting_together": {
+    "directory": "black_metal_velvet/"
  }
- 
 
 } 

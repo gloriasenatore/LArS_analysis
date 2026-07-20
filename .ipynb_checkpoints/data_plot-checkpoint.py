@@ -68,8 +68,8 @@ def plot_alpha_spectrum(centers, hist, popt_tot, perr_tot, filename, filename_hi
     axs[0].scatter(centers, hist, color='black', s=20)
     axs[0].set_ylim(ylim)
     
-    mini=int((popt_tot[1]-200)/interval)
-    maxi=int((popt_tot[1]+200)/interval)
+    mini=int((popt_tot[1]-250)/interval)
+    maxi=min(int(centers[-1]),int((popt_tot[1]+250)/interval))
     
     axs[0].plot(centers[mini:maxi], comb_list_gaus_with_exp(centers[mini:maxi],*popt_tot),'-', color='green')
     axs[0].plot(centers[mini:maxi],gaus_list(centers[mini:maxi],popt_tot[0],popt_tot[1],popt_tot[2]),'-', color='red', label=r'alpha peak' +"\n"+ '$\mu=$('+str('%.1f' % popt_tot[1])+"$\pm$"+str('%.1f' %perr_tot[1])+") PE" +"\n"+  "$\sigma=$("+str('%.1f' % popt_tot[2])+"$\pm$"+str('%.1f' % perr_tot[2])+") PE")
@@ -131,6 +131,7 @@ def plot_Fprompt(df, filename):
     fig = plt.figure(figsize=(10,6))
     plt.hist(df["Prompt"], bins=200, range=(0, 1), histtype='step')
     plt.savefig("plots/light_yield_after_PID/"+filename, bbox_inches='tight')
+    plt.xlabel("Fprompt", fontsize=19)
     
     
 def plot_Fprompt_fitted(centers, hist, hist_tot, bins, gaus_sum, popt_ER, popt_alpha, filename, cut, fprompt_fit_min, fprompt_fit_max, ylims=(1, 1e5)):
@@ -185,8 +186,8 @@ def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_to
     hist_alpha = axs[0].hist(hist, bins=bins, range=_range, histtype='step', label='after bkg & PID cuts', color='orange')
     axs[0].set_ylim(ylim)
     
-    mini=int((popt_tot[1]-150)/interval)
-    maxi=int((popt_tot[1]+150)/interval)
+    mini=int((popt_tot[1]-10)/interval)
+    maxi=int((popt_tot[1]+10)/interval)
     
     axs[0].plot(centers[mini:maxi], gaus_list(centers[mini:maxi],popt_tot[0],popt_tot[1],popt_tot[2]),'-', color='red', label=r'alpha peak' +"\n"+ '$\mu=$('+str('%.1f' % popt_tot[1])+"$\pm$"+str('%.1f' %perr_tot[1])+") PE" +"\n"+  "$\sigma=$("+str('%.1f' % popt_tot[2])+"$\pm$"+str('%.1f' % perr_tot[2])+") PE")
     axs[0].set_yscale('log')
@@ -218,7 +219,7 @@ def plot_alpha_spectrum_after_PID(centers, hist, hist_tot, bins, _range, popt_to
         plt.savefig("plots/light_yield_after_PID/bad/"+filename, bbox_inches='tight')
         
         
-def plot_fitted_stacked_wvfs(traces_all, traces_ER, traces_alpha, popt_all, perr_all, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, filename, n_samples=800, xlims=(-50,7200)):
+def plot_fitted_stacked_wvfs(traces_all, traces_ER, traces_alpha, popt_all, perr_all, popt_ER, perr_ER, popt_alpha, perr_alpha, cfg, filename, filename_txt, n_samples=800, xlims=(-50,7200)):
     
     lower_boundary = cfg["triplet_lifetime"]["lower_boundary_fit"]
     upper_boundary = cfg["triplet_lifetime"]["upper_boundary_fit"]
@@ -269,7 +270,32 @@ def plot_fitted_stacked_wvfs(traces_all, traces_ER, traces_alpha, popt_all, perr
     print("alpha fit done, reduced chi2: " + str(chi2_red_alpha))
     
     plt.savefig("plots/triplet_lifetime/"+filename, bbox_inches='tight')
-    
+    '''
+    _exp_list = exp_list(samples[lower_boundary:upper_boundary], *popt_ER)
+    with open("observables/stacked_waveforms_txt/"+filename_txt, "x") as f:
+        j=0
+        for i in range(len(samples)):
+            f.write(str(samples[i])+"\t"+str(traces_ER[0][i])+"\t"+str(popt_ER[0])+
+                    "\t"+str(perr_ER[0])+"\t"+str(popt_ER[1])+
+                    "\t"+str(perr_ER[1]))
+            if(i >= lower_boundary and i < upper_boundary):
+                f.write("\t"+str(_exp_list[j])+"\t"+str(res_ER[j])+"\t"+str(lower_boundary)+"\t"+str(upper_boundary))
+                j=j+1
+
+            f.write("\n")
+     '''       
+    _exp_list = exp_list(samples[lower_boundary:upper_boundary], *popt_alpha)
+    with open("observables/stacked_waveforms_txt/"+filename_txt, "x") as f:
+        j=0
+        for i in range(len(samples)):
+            f.write(str(samples[i])+"\t"+str(traces_alpha[0][i])+"\t"+str(popt_alpha[0])+
+                    "\t"+str(perr_alpha[0])+"\t"+str(popt_alpha[1])+
+                    "\t"+str(perr_alpha[1]))
+            if(i >= lower_boundary and i < upper_boundary):
+                f.write("\t"+str(_exp_list[j])+"\t"+str(res_alpha[j])+"\t"+str(lower_boundary)+"\t"+str(upper_boundary))
+                j=j+1
+
+            f.write("\n")
     
     
 def plot_LED_calibration(centers, data_all, bins, _range, popt_tot, perr_tot, filename, peak_valley_ratios, ylim=(7e-1, 6e4), fixed_delta=True):
@@ -321,24 +347,26 @@ def plot_LED_calibration(centers, data_all, bins, _range, popt_tot, perr_tot, fi
     
 def plot_visible_light_spectrum(centers, hist, popt_tot, perr_tot, filename, filename_hist, ylim=(7e-1, 6e5), interval=5, save_to_file=False):
     fig = plt.figure(figsize=(10,6))
-    gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
-    axs = gs.subplots(sharex=True, sharey=False)
-    axs[0].scatter(centers, hist, color='black', s=20, label="data")
-    axs[0].set_ylim(ylim)
+    #gs = fig.add_gridspec(2, hspace=0, height_ratios=[4,1])
+    #axs = gs.subplots(sharex=True, sharey=False)
+    plt.scatter(centers, hist, color='black', s=20, label="data")
+    #axs[0].set_ylim(ylim)
     
-    mini=int((popt_tot[1]-10)/interval)
+    mini=int(max(centers[0],(popt_tot[1]-10)/interval))
     maxi=int((popt_tot[1]+10)/interval)
+    print(mini)
+    print(maxi)
     
-    axs[0].plot(centers[mini:maxi],gaus_list(centers[mini:maxi],popt_tot[0],popt_tot[1],popt_tot[2]),'-', color='red', label=r'visible light peak fit' +"\n"+ '$\mu=$('+str('%.2f' % popt_tot[1])+"$\pm$"+str('%.2f' %perr_tot[1])+") PE" +"\n"+  "$\sigma=$("+str('%.2f' % popt_tot[2])+"$\pm$"+str('%.2f' % perr_tot[2])+") PE")
-    axs[0].set_yscale('log')
-    axs[1].xaxis.set_minor_locator(AutoMinorLocator())
-    axs[0].set_ylabel('Counts/'+str('%.2f' %interval)+'PE', fontsize=19)
-    axs[0].legend(fontsize=15, frameon=False, loc='upper right')
+    plt.plot(centers[mini:maxi],gaus_list(centers[mini:maxi],popt_tot[0],popt_tot[1],popt_tot[2]),'-', color='red', label=r'visible light peak fit' +"\n"+ '$\mu=$('+str('%.2f' % popt_tot[1])+"$\pm$"+str('%.2f' %perr_tot[1])+") PE" +"\n"+  "$\sigma=$("+str('%.2f' % popt_tot[2])+"$\pm$"+str('%.2f' % perr_tot[2])+") PE")
+    plt.yscale('log')
+    #plt.xaxis.set_minor_locator(AutoMinorLocator())
+    plt.ylabel('Counts/'+str('%.2f' %interval)+'PE', fontsize=19)
+    plt.legend(fontsize=15, frameon=False, loc='upper right')
 
-    axs[1].set_xlabel('Waveform Area [PE]', fontsize=19)
+    plt.xlabel('Waveform Area [PE]', fontsize=19)
     
     res = functions.residuals(hist[mini:maxi], gaus_list(centers[mini:maxi],*popt_tot))
-     
+    '''
     axs[1].fill_between(centers, y1= 0 - 1, y2= 0 + 1, color='green', alpha=.5)
     axs[1].fill_between(centers, y1= - 2, y2= -1, color='orange', alpha=.5)
     axs[1].fill_between(centers, y1= 1, y2= 2, color='orange', alpha=.5)
@@ -348,7 +376,7 @@ def plot_visible_light_spectrum(centers, hist, popt_tot, perr_tot, filename, fil
     axs[1].scatter(centers[mini:maxi], res, marker='.', linestyle='None', color='black')
     
     axs[1].set_xlim(0, max(centers)) #min(centers)
-
+    '''
     chi2_red = functions.reduced_chi_square(hist[mini:maxi], gaus_list(centers[mini:maxi],*popt_tot), centers, popt_tot)
     print("Fitting done, reduced chi2: " + str(chi2_red))
     if chi2_red < 4.:
@@ -395,22 +423,25 @@ def plot_together_obs(values, filename, with_time=True, obs="SPE", additional_da
     weighted_error = np.sqrt(1 / np.sum(weights))
     print("std dev: " + str(std_dev) + "  weighted error: " + str(weighted_error))
     
-    ax1.axhline(weighted_mean, color='blue', linewidth=.5, label = 'Mean='+str('%.2f'%weighted_mean), lw=2)
+    if additional_dataset is not None:
+        ax1.axhline(weighted_mean, color='blue', linewidth=.5, label = 'Mean pre PID='+str('%.2f'%weighted_mean)+"PE", lw=2)
+    else:
+        ax1.axhline(weighted_mean, color='blue', linewidth=.5, label = 'Mean='+str('%.2f'%weighted_mean), lw=2)
     
     if additional_dataset is not None:
         weights = np.array([1 / err**2 for err in additional_dataset[1]])
         weighted_mean = np.sum(weights * additional_dataset[0]) / np.sum(weights)
         std_dev_2 = np.std(additional_dataset[0], ddof=1)
-        ax1.axhline(weighted_mean, color='violet', linewidth=.5, label = 'Mean post PID='+str('%.2f'%weighted_mean), lw=2)
+        ax1.axhline(weighted_mean, color='violet', linewidth=.5, label = 'Mean post PID='+str('%.2f'%weighted_mean)+"PE", lw=2)
         
     
-    
-    ax1.fill_between(x, y1 = weighted_mean - std_dev, y2 = weighted_mean + std_dev, color='green', alpha=.3, label=r'1$\sigma$='+str('%.2f'%std_dev))
+    '''
+    ax1.fill_between(x, y1 = weighted_mean - std_dev, y2 = weighted_mean + std_dev, color='green', alpha=.3, label=r'1$\sigma$='+str('%.2f'%std_dev)+"PE")
     ax1.fill_between(x, y1 = weighted_mean - 2.*std_dev, y2 = weighted_mean - std_dev, color='orange', alpha=.3, label=r'2$\sigma$')
     ax1.fill_between(x, y1 = weighted_mean + std_dev, y2 = weighted_mean + 2.*std_dev, color='orange', alpha=.3)
     ax1.fill_between(x, y1 = weighted_mean - 3.*std_dev, y2 = weighted_mean - 2.*std_dev, color='red', alpha=.3, label=r'3$\sigma$')
     ax1.fill_between(x, y1 = weighted_mean + 2.*std_dev, y2 = weighted_mean + 3.*std_dev, color='red', alpha=.3)
-
+    '''
     if additional_dataset is None:
         ax1.errorbar(x, measurements, yerr=errs, fmt='o', color='black')
     else:
@@ -424,7 +455,7 @@ def plot_together_obs(values, filename, with_time=True, obs="SPE", additional_da
     ax1.set_xticks(x, values.keys(), rotation=30, fontsize=13)
     ax1.set_xlabel("Measurement name", fontsize=19)
     if obs == "SPE": ax1.set_ylabel(f"SPE Area [ADC$\cdot$ns]", fontsize=19)
-    if obs == "light_yield": ax1.set_ylabel(f"Light yield [PE]", fontsize=19)
+    if obs == "light_yield" or obs == "light_yield_both": ax1.set_ylabel(f"Light yield [PE]", fontsize=19)
     if obs == "triplet_lifetime": ax1.set_ylabel(f"Triplet lifetime [ns]", fontsize=19)
     ax1.yaxis.set_minor_locator(AutoMinorLocator())
 
@@ -457,21 +488,21 @@ def plot_together_triplet_lifetime(values_ER_alpha, values_ER, values_alpha, fil
     weighted_error = np.sqrt(1 / np.sum(weights))
     print("std dev: " + str(std_dev) + "  weighted error: " + str(weighted_error))
     
-    ax1.axhline(weighted_mean, color='blue', linewidth=.5, label = 'Mean ER+alpha='+str('%.2f' %weighted_mean), lw=2)
-    
+    #ax1.axhline(weighted_mean, color='blue', linewidth=.5, label = 'Mean ER+alpha='+str('%.2f' %weighted_mean), lw=2)
+    '''
     ax1.fill_between(x, y1 = weighted_mean - std_dev, y2 = weighted_mean + std_dev, color='green', alpha=.3, label=r'1$\sigma$=' + str('%.2f' % std_dev))
     ax1.fill_between(x, y1 = weighted_mean - 2.*std_dev, y2 = weighted_mean - std_dev, color='orange', alpha=.3, label=r'2$\sigma$')
     ax1.fill_between(x, y1 = weighted_mean + std_dev, y2 = weighted_mean + 2.*std_dev, color='orange', alpha=.3)
     ax1.fill_between(x, y1 = weighted_mean - 3.*std_dev, y2 = weighted_mean - 2.*std_dev, color='red', alpha=.3, label=r'3$\sigma$')
     ax1.fill_between(x, y1 = weighted_mean + 2.*std_dev, y2 = weighted_mean + 3.*std_dev, color='red', alpha=.3)
-    
+    '''
     weights = np.array([1 / err**2 for err in ER[2]])
     weighted_mean = np.sum(weights * ER[1]) / np.sum(weights)
     std_dev = np.std(ER[1], ddof=1)
     weighted_error = np.sqrt(1 / np.sum(weights))
     print("std dev: " + str(std_dev) + "  weighted error: " + str(weighted_error))
     
-    ax1.axhline(weighted_mean, color='violet', linewidth=.5, label = 'Mean ER=' + str('%.2f' % weighted_mean), lw=2)
+    ax1.axhline(weighted_mean, color='violet', linewidth=.5, label = 'Mean =' + str('%.2f' % weighted_mean) + "ns", lw=2)
     
     weights = np.array([1 / err**2 for err in alpha[2]])
     weighted_mean = np.sum(weights * alpha[1]) / np.sum(weights)
@@ -481,8 +512,8 @@ def plot_together_triplet_lifetime(values_ER_alpha, values_ER, values_alpha, fil
     
     #ax1.axhline(weighted_mean, color='purple', linewidth=.5, label = 'Mean alpha', lw=2)
 
-    ax1.errorbar(x, ER_alpha[1], yerr=ER_alpha[2], fmt='o', color='black', label="ER+alpha")
-    ax1.errorbar(x, ER[1], yerr=ER[2], fmt='o', color='brown', label="ER")
+    #ax1.errorbar(x, ER_alpha[1], yerr=ER_alpha[2], fmt='o', color='black', label="ER+alpha")
+    ax1.errorbar(x, ER[1], yerr=ER[2], fmt='o', color='brown', label="Data")
     #ax1.errorbar(x, alpha[1], yerr=alpha[2], fmt='o', color='grey', label="alpha")
         
         
